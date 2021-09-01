@@ -4,7 +4,7 @@ using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares
 {
-    public class PinelineBuilder
+    public class PipelineBuilder
     {
         private readonly List<IMiddleware> middlewares = new();
         // private List<MiddlewareDelegate> middlewareActions = new();
