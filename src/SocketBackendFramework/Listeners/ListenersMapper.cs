@@ -33,7 +33,7 @@ namespace SocketBackendFramework.Listeners
             }
         }
 
-        public void OnReceivePacket(SocketContext context)
+        public void OnReceivePacket(PacketContext context)
         {
             this.pipeline.Entry(context);
 
