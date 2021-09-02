@@ -14,7 +14,7 @@ namespace SocketBackendFramework.Middlewares.ControllersMapper
             this.controllers.Add(controller);
         }
 
-        public void Invoke(SocketContext context, Action next)
+        public void Invoke(PacketContext context, Action next)
         {
             foreach (Controller controller in this.controllers)
             {

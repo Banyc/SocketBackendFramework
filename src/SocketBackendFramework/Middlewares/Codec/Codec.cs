@@ -1,5 +1,4 @@
 using System;
-using SocketBackendFramework.Middlewares.ControllersMapper;
 using SocketBackendFramework.Models;
 
 namespace SocketBackendFramework.Middlewares.Codec
@@ -13,7 +12,7 @@ namespace SocketBackendFramework.Middlewares.Codec
             this.headerCodec = headerCodec;
         }
 
-        public void Invoke(SocketContext context, Action next)
+        public void Invoke(PacketContext context, Action next)
         {
             this.headerCodec.DecodeRequest(context);
             next();

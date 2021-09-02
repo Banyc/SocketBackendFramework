@@ -7,7 +7,7 @@ namespace SocketBackendFramework.Middlewares.Codec
     {
         // SocketContext GetSocketContext(List<byte> packet);
         // List<byte> GetResponseBytes(SocketContext context);
-        void DecodeRequest(SocketContext context);
-        void EncodeResponse(SocketContext context);
+        void DecodeRequest(PacketContext context);
+        void EncodeResponse(PacketContext context);
     }
 }

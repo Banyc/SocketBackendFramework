@@ -6,6 +6,6 @@ namespace SocketBackendFramework.Middlewares
     public interface IMiddleware
     {
         // MiddlewareActionDelegate Invoke { get; }
-        void Invoke(SocketContext context, Action next);
+        void Invoke(PacketContext context, Action next);
     }
 }

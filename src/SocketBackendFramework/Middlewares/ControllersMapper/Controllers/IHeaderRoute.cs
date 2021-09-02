@@ -4,6 +4,6 @@ namespace SocketBackendFramework.Middlewares.ControllersMapper.Controllers
 {
     public interface IHeaderRoute
     {
-	    bool IsThisContextMatchThisController(SocketContext context);
+	    bool IsThisContextMatchThisController(PacketContext context);
     }
 }

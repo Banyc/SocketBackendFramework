@@ -6,6 +6,6 @@ namespace SocketBackendFramework.Middlewares.ControllersMapper.Controllers
     {
         public IHeaderRoute HeaderRoute { get; set; }
         // TODO: action route
-        public abstract void Request(SocketContext context);
+        public abstract void Request(PacketContext context);
     }
 }
