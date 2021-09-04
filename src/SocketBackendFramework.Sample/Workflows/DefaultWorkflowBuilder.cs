@@ -4,18 +4,23 @@ using SocketBackendFramework.Models.Workflows;
 using SocketBackendFramework.Workflows;
 using SocketBackendFramework.Sample.Codec;
 using SocketBackendFramework.Middlewares.ControllersMapper;
-using SocketBackendFramework.Middlewares.ContextAdaptor;
 using SocketBackendFramework.Sample.Models;
+using SocketBackendFramework.Sample.Helpers;
 
 namespace SocketBackendFramework.Sample.Workflows
 {
     public class DefaultWorkflowBuilder : WorkflowBuilder<MiddlewareContext>
     {
-        public DefaultWorkflowBuilder(WorkflowConfig config,
-                                      PipelineBuilder<MiddlewareContext> pipelineBuilder,
-                                      IContextAdaptor<MiddlewareContext> contextAdaptor)
-            : base(config, pipelineBuilder, contextAdaptor)
+        public DefaultWorkflowBuilder(WorkflowConfig config)
+            : base(config)
         {
+        }
+
+        public override Workflow Build()
+        {
+            PipelineBuilder<MiddlewareContext> pipelineBuilder = new();
+
+            return base.Build(pipelineBuilder, new ContextAdaptor());
         }
 
         protected override void ConfigurateMiddlewares(PipelineBuilder<MiddlewareContext> pipelineBuilder)

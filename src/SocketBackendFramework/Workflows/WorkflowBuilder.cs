@@ -13,19 +13,15 @@ namespace SocketBackendFramework.Workflows
     public abstract class WorkflowBuilder<TMiddlewareContext> : IWorkflowBuilder
     {
         private readonly WorkflowConfig config;
-        private readonly PipelineBuilder<TMiddlewareContext> pipelineBuilder;
-        private readonly IContextAdaptor<TMiddlewareContext> contextAdaptor;
-
-        protected WorkflowBuilder(WorkflowConfig config,
-                                  PipelineBuilder<TMiddlewareContext> pipelineBuilder,
-                                  IContextAdaptor<TMiddlewareContext> contextAdaptor)
+        protected WorkflowBuilder(WorkflowConfig config)
         {
             this.config = config;
-            this.pipelineBuilder = pipelineBuilder;
-            this.contextAdaptor = contextAdaptor;
         }
 
-        public Workflow Build()
+        public abstract Workflow Build();
+
+        protected Workflow Build(PipelineBuilder<TMiddlewareContext> pipelineBuilder,
+                                 IContextAdaptor<TMiddlewareContext> contextAdaptor)
         {
             ConfigurateMiddlewares(pipelineBuilder);
 
@@ -37,7 +33,7 @@ namespace SocketBackendFramework.Workflows
                 new(config.ListenersMapperConfig, pipeline, contextAdaptor);
 
             Workflow<TMiddlewareContext> workflow = new(
-                config,
+                this.config,
                 listenersMapper
             );
             return workflow;
