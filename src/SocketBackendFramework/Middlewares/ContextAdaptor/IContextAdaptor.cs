@@ -1,5 +1,4 @@
 using SocketBackendFramework.Models;
-using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares.ContextAdaptor
 {

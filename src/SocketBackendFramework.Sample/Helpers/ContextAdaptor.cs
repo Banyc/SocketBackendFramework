@@ -1,6 +1,5 @@
 using SocketBackendFramework.Middlewares.ContextAdaptor;
 using SocketBackendFramework.Models;
-using SocketBackendFramework.Models.Middlewares;
 using SocketBackendFramework.Sample.Models;
 
 namespace SocketBackendFramework.Sample.Helpers

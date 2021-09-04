@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using SocketBackendFramework.Middlewares.ControllersMapper.Controllers;
-using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares.ControllersMapper
 {

@@ -1,6 +1,4 @@
 using System;
-using SocketBackendFramework.Models.Middlewares;
-
 namespace SocketBackendFramework.Middlewares
 {
     public interface IMiddleware<TMiddlewareContext>

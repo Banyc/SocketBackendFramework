@@ -1,4 +1,3 @@
-using System;
 using NetCoreServer;
 
 namespace SocketBackendFramework.Listeners.SocketHandlers

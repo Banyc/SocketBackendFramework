@@ -3,7 +3,6 @@ using SocketBackendFramework.Middlewares;
 using SocketBackendFramework.Middlewares.ContextAdaptor;
 using SocketBackendFramework.Models;
 using SocketBackendFramework.Models.Listeners;
-using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Listeners
 {
