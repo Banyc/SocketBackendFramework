@@ -25,13 +25,13 @@ namespace SocketBackendFramework.Listeners
             {
                 case ExclusiveTransportType.Tcp:
                     this.tcpServer = new TcpServerHandler(IPAddress.Any, config.ListeningPort);
+                    this.tcpServer.Connected += OnTcpServerConnected;
                     break;
                 case ExclusiveTransportType.Udp:
                     this.udpServer = new UdpServerHandler(IPAddress.Any, config.ListeningPort);
+                    this.udpServer.Received += OnReceive;
                     break;
             }
-            this.tcpServer.Connected += OnTcpServerConnected;
-            this.udpServer.Received += OnReceive;
         }
 
         public void Start()
@@ -74,6 +74,15 @@ namespace SocketBackendFramework.Listeners
             {
                 this.OnReceive(sender, remoteEndPoint, buffer, offset, size);
             };
+            session.Disconnected += OnTcpSessionDisconnected;
+        }
+
+        private void OnTcpSessionDisconnected(object sender)
+        {
+            TcpSessionHandler session = (TcpSessionHandler)sender;
+            IPEndPoint remoteEndPoint = (IPEndPoint)session.Socket.RemoteEndPoint;
+            int remotePort = remoteEndPoint.Port;
+            this.tcpSessions.Remove(remotePort);
         }
 
         private void OnReceive(object sender, EndPoint remoteEndpoint, byte[] buffer, long offset, long size)
