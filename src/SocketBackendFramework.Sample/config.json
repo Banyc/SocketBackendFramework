@@ -1,0 +1,18 @@
+{
+    "WorkflowPoolConfig": {
+        "WorkflowConfigs": [
+            {
+                "Name": "default",
+                "ListenersMapperConfig": {
+                    "ListenerConfigs": [
+                        {
+                            "ListeningPort": 8080,
+                            "TransportType": "Udp"
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+    // users' configurations here
+}
