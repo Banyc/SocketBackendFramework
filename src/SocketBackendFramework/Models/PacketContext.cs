@@ -12,6 +12,6 @@ namespace SocketBackendFramework.Models
         public long RequestPacketRawOffset { get; set; }
         public long RequestPacketRawSize { get; set; }
         public bool ShouldRespond { get; set; }
-        public List<byte> ResponsePacketRaw { get; set; }
+        public List<byte> ResponsePacketRaw { get; set; } = new();
     }
 }
