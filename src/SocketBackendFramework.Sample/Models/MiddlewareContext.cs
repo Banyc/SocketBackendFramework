@@ -6,9 +6,9 @@ namespace SocketBackendFramework.Sample.Models
     public class MiddlewareContext
     {
         public PacketContext PacketContext { get; set; }
-        public PacketBody? RequestBody { get; set; }
-        public PacketBody? ResponseBody { get; set; }
-        public RequestHeader? RequestHeader { get; set; }
-        public ResponseHeader? ResponseHeader { get; set; }
+        public PacketBody RequestBody { get; set; } = new();
+        public PacketBody ResponseBody { get; set; } = new();
+        public RequestHeader RequestHeader { get; set; } = new();
+        public ResponseHeader ResponseHeader { get; set; } = new();
     }
 }
