@@ -2,7 +2,7 @@ namespace SocketBackendFramework.Middlewares.ControllersMapper.Controllers
 {
     public abstract class Controller<TMiddlewareContext>
     {
-        public IHeaderRoute<TMiddlewareContext> HeaderRoute { get; set; }
+        public abstract IHeaderRoute<TMiddlewareContext> HeaderRoute { get; }
         // TODO: action route
         public abstract void Request(TMiddlewareContext context);
     }
