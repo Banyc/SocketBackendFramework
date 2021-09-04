@@ -53,7 +53,7 @@ namespace SocketBackendFramework.Middlewares
             SocketRequestDelegate nextWrappedPine = null;
 
             int i;
-            for (i = this.pipeWrappers.Count; i >= 0; i--)
+            for (i = this.pipeWrappers.Count - 1; i >= 0; i--)
             {
                 nextWrappedPine = this.pipeWrappers[i](nextWrappedPine);
             }
