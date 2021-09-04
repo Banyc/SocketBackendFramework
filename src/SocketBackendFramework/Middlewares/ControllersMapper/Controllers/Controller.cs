@@ -1,4 +1,5 @@
 using SocketBackendFramework.Models;
+using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares.ControllersMapper.Controllers
 {
@@ -6,6 +7,6 @@ namespace SocketBackendFramework.Middlewares.ControllersMapper.Controllers
     {
         public IHeaderRoute HeaderRoute { get; set; }
         // TODO: action route
-        public abstract void Request(PacketContext context);
+        public abstract void Request(IMiddlewareContext context);
     }
 }

@@ -5,6 +5,7 @@ using SocketBackendFramework.Sample.Workflows;
 using SocketBackendFramework.Middlewares;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using SocketBackendFramework.Sample.Helpers;
 
 string configJsonString = File.ReadAllText("config.json");
 var jsonSerializerOptions = new JsonSerializerOptions()
@@ -27,7 +28,9 @@ WorkflowConfig workflowConfig = workflowPool.GetWorkflowConfig("default");
 
 PipelineBuilder pipelineBuilder = new();
 
-WorkflowBuilder workflowBuilder = new DefaultWorkflowBuilder(workflowConfig, pipelineBuilder);
+WorkflowBuilder workflowBuilder = new DefaultWorkflowBuilder(workflowConfig,
+                                                             pipelineBuilder,
+                                                             new ContextAdaptor());
 
 workflowPool.AddWorkflow(workflowBuilder);
 

@@ -1,13 +1,12 @@
 using System.Collections.Generic;
 using SocketBackendFramework.Models;
+using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares.Codec
 {
     public interface IHeaderCodec
     {
-        // SocketContext GetSocketContext(List<byte> packet);
-        // List<byte> GetResponseBytes(SocketContext context);
-        void DecodeRequest(PacketContext context);
-        void EncodeResponse(PacketContext context);
+        void DecodeRequest(IMiddlewareContext context);
+        void EncodeResponse(IMiddlewareContext context);
     }
 }

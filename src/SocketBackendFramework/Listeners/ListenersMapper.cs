@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using SocketBackendFramework.Middlewares;
+using SocketBackendFramework.Middlewares.ContextAdaptor;
 using SocketBackendFramework.Models;
 using SocketBackendFramework.Models.Listeners;
+using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Listeners
 {
@@ -10,8 +12,9 @@ namespace SocketBackendFramework.Listeners
         // port -> listener
         private readonly Dictionary<int, Listener> listeners = new();
         private readonly Pipeline pipeline;
+        private readonly IContextAdaptor contextAdaptor;
 
-        public ListenersMapper(ListenersMapperConfig config, Pipeline pipeline)
+        public ListenersMapper(ListenersMapperConfig config, Pipeline pipeline, IContextAdaptor contextAdaptor)
         {
             foreach (var listenerConfig in config.ListenerConfigs)
             {
@@ -20,6 +23,7 @@ namespace SocketBackendFramework.Listeners
             }
 
             this.pipeline = pipeline;
+            this.contextAdaptor = contextAdaptor;
         }
 
         public void Start()
@@ -32,8 +36,10 @@ namespace SocketBackendFramework.Listeners
 
         public void OnReceivePacket(PacketContext context)
         {
-            this.pipeline.Entry(context);
+            IMiddlewareContext middlewareContext = this.contextAdaptor.GetMiddlewareContext(context);
+            this.pipeline.Entry(middlewareContext);
 
+            context = this.contextAdaptor.GetPacketContext(middlewareContext);
             this.listeners[context.LocalPort].Respond(context);
         }
     }

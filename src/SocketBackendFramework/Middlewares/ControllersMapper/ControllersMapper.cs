@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using SocketBackendFramework.Middlewares.ControllersMapper.Controllers;
-using SocketBackendFramework.Models;
+using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares.ControllersMapper
 {
@@ -14,7 +14,7 @@ namespace SocketBackendFramework.Middlewares.ControllersMapper
             this.controllers.Add(controller);
         }
 
-        public void Invoke(PacketContext context, Action next)
+        public void Invoke(IMiddlewareContext context, Action next)
         {
             foreach (Controller controller in this.controllers)
             {

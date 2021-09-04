@@ -4,12 +4,16 @@ using SocketBackendFramework.Models.Workflows;
 using SocketBackendFramework.Workflows;
 using SocketBackendFramework.Sample.Codec;
 using SocketBackendFramework.Middlewares.ControllersMapper;
+using SocketBackendFramework.Middlewares.ContextAdaptor;
 
 namespace SocketBackendFramework.Sample.Workflows
 {
     public class DefaultWorkflowBuilder : WorkflowBuilder
     {
-        public DefaultWorkflowBuilder(WorkflowConfig config, PipelineBuilder pipelineBuilder) : base(config, pipelineBuilder)
+        public DefaultWorkflowBuilder(WorkflowConfig config,
+                                      PipelineBuilder pipelineBuilder,
+                                      IContextAdaptor contextAdaptor)
+            : base(config, pipelineBuilder, contextAdaptor)
         {
         }
 

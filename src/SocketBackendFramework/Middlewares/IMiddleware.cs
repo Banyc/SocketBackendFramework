@@ -1,11 +1,11 @@
 using System;
-using SocketBackendFramework.Models;
+using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares
 {
     public interface IMiddleware
     {
         // MiddlewareActionDelegate Invoke { get; }
-        void Invoke(PacketContext context, Action next);
+        void Invoke(IMiddlewareContext context, Action next);
     }
 }

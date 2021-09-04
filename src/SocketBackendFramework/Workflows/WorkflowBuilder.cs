@@ -1,5 +1,6 @@
 using SocketBackendFramework.Listeners;
 using SocketBackendFramework.Middlewares;
+using SocketBackendFramework.Middlewares.ContextAdaptor;
 using SocketBackendFramework.Models.Workflows;
 
 namespace SocketBackendFramework.Workflows
@@ -8,12 +9,15 @@ namespace SocketBackendFramework.Workflows
     {
         private readonly WorkflowConfig config;
         private readonly PipelineBuilder pipelineBuilder;
+        private readonly IContextAdaptor contextAdaptor;
 
         protected WorkflowBuilder(WorkflowConfig config,
-                                  PipelineBuilder pipelineBuilder)
+                                  PipelineBuilder pipelineBuilder,
+                                  IContextAdaptor contextAdaptor)
         {
             this.config = config;
             this.pipelineBuilder = pipelineBuilder;
+            this.contextAdaptor = contextAdaptor;
         }
 
         public Workflow Build()
@@ -24,7 +28,8 @@ namespace SocketBackendFramework.Workflows
             {
                 Entry = pipelineBuilder.Build()
             };
-            ListenersMapper listenersMapper = new(config.ListenersMapperConfig, pipeline);
+            ListenersMapper listenersMapper =
+                new(config.ListenersMapperConfig, pipeline, contextAdaptor);
 
             Workflow workflow = new(
                 config,
