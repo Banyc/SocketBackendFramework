@@ -6,6 +6,7 @@ using SocketBackendFramework.Sample.Codec;
 using SocketBackendFramework.Middlewares.ControllersMapper;
 using SocketBackendFramework.Sample.Models;
 using SocketBackendFramework.Sample.Helpers;
+using SocketBackendFramework.Sample.Controllers;
 
 namespace SocketBackendFramework.Sample.Workflows
 {
@@ -32,6 +33,8 @@ namespace SocketBackendFramework.Sample.Workflows
 
             // register the controllers
             ControllersMapper<MiddlewareContext> controllersMapper = new();
+            controllersMapper.AddController(new NoReplyController());
+            controllersMapper.AddController(new EchoController());
             pipelineBuilder.UseMiddleware(controllersMapper);
         }
     }
