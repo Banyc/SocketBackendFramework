@@ -26,13 +26,13 @@ WorkflowPool workflowPool = new(workflowPoolConfig);
 
 WorkflowConfig workflowConfig = workflowPool.GetWorkflowConfig("default");
 
-PipelineBuilder pipelineBuilder = new();
+PipelineBuilder<MiddlewareContext> pipelineBuilder = new();
 
-WorkflowBuilder workflowBuilder = new DefaultWorkflowBuilder(workflowConfig,
+IWorkflowBuilder workflowBuilder = new DefaultWorkflowBuilder(workflowConfig,
                                                              pipelineBuilder,
                                                              new ContextAdaptor());
 
-workflowPool.AddWorkflow(workflowBuilder);
+workflowPool.AddWorkflow(workflowBuilder.Build());
 
 workflowPool.Start();
 

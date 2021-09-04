@@ -5,9 +5,9 @@ using SocketBackendFramework.Sample.Models;
 
 namespace SocketBackendFramework.Sample.Helpers
 {
-    public class ContextAdaptor : IContextAdaptor
+    public class ContextAdaptor : IContextAdaptor<MiddlewareContext>
     {
-        public IMiddlewareContext GetMiddlewareContext(PacketContext packetContext)
+        public MiddlewareContext GetMiddlewareContext(PacketContext packetContext)
         {
             return new MiddlewareContext()
             {
@@ -15,9 +15,9 @@ namespace SocketBackendFramework.Sample.Helpers
             };
         }
 
-        public PacketContext GetPacketContext(IMiddlewareContext middlewareContext)
+        public PacketContext GetPacketContext(MiddlewareContext middlewareContext)
         {
-            return ((MiddlewareContext)middlewareContext).PacketContext;
+            return middlewareContext.PacketContext;
         }
     }
 }

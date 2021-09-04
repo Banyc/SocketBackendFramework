@@ -2,8 +2,8 @@ using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares
 {
-    public class Pipeline
+    public class Pipeline<TMiddlewareContext>
     {
-        public SocketRequestDelegate Entry { get; set; }
+        public MiddlewareRequestDelegate<TMiddlewareContext> Entry { get; set; }
     }
 }

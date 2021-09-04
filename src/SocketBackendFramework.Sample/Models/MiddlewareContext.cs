@@ -1,10 +1,9 @@
 using SocketBackendFramework.Models;
-using SocketBackendFramework.Models.Middlewares;
 using SocketBackendFramework.Sample.Models.Middlewares;
 
 namespace SocketBackendFramework.Sample.Models
 {
-    public class MiddlewareContext : IMiddlewareContext
+    public class MiddlewareContext
     {
         public PacketContext PacketContext { get; set; }
         public PacketBody? RequestBody { get; set; }

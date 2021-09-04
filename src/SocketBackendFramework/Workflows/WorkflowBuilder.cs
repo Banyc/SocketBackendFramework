@@ -5,15 +5,20 @@ using SocketBackendFramework.Models.Workflows;
 
 namespace SocketBackendFramework.Workflows
 {
-    public abstract class WorkflowBuilder
+    public interface IWorkflowBuilder
+    {
+        Workflow Build();
+    }
+
+    public abstract class WorkflowBuilder<TMiddlewareContext> : IWorkflowBuilder
     {
         private readonly WorkflowConfig config;
-        private readonly PipelineBuilder pipelineBuilder;
-        private readonly IContextAdaptor contextAdaptor;
+        private readonly PipelineBuilder<TMiddlewareContext> pipelineBuilder;
+        private readonly IContextAdaptor<TMiddlewareContext> contextAdaptor;
 
         protected WorkflowBuilder(WorkflowConfig config,
-                                  PipelineBuilder pipelineBuilder,
-                                  IContextAdaptor contextAdaptor)
+                                  PipelineBuilder<TMiddlewareContext> pipelineBuilder,
+                                  IContextAdaptor<TMiddlewareContext> contextAdaptor)
         {
             this.config = config;
             this.pipelineBuilder = pipelineBuilder;
@@ -24,20 +29,20 @@ namespace SocketBackendFramework.Workflows
         {
             ConfigurateMiddlewares(pipelineBuilder);
 
-            Pipeline pipeline = new()
+            Pipeline<TMiddlewareContext> pipeline = new()
             {
                 Entry = pipelineBuilder.Build()
             };
-            ListenersMapper listenersMapper =
+            ListenersMapper<TMiddlewareContext> listenersMapper =
                 new(config.ListenersMapperConfig, pipeline, contextAdaptor);
 
-            Workflow workflow = new(
+            Workflow<TMiddlewareContext> workflow = new(
                 config,
                 listenersMapper
             );
             return workflow;
         }
 
-        protected abstract void ConfigurateMiddlewares(PipelineBuilder pipelineBuilder);
+        protected abstract void ConfigurateMiddlewares(PipelineBuilder<TMiddlewareContext> pipelineBuilder);
     }
 }

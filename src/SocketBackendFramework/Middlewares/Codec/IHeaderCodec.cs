@@ -4,9 +4,9 @@ using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares.Codec
 {
-    public interface IHeaderCodec
+    public interface IHeaderCodec<TMiddlewareContext>
     {
-        void DecodeRequest(IMiddlewareContext context);
-        void EncodeResponse(IMiddlewareContext context);
+        void DecodeRequest(TMiddlewareContext context);
+        void EncodeResponse(TMiddlewareContext context);
     }
 }

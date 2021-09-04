@@ -5,18 +5,18 @@ using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares.ControllersMapper
 {
-    public class ControllersMapper : IMiddleware
+    public class ControllersMapper<TMiddlewareContext> : IMiddleware<TMiddlewareContext>
     {
-        private readonly List<Controller> controllers = new();
+        private readonly List<Controller<TMiddlewareContext>> controllers = new();
 
-        public void AddController(Controller controller)
+        public void AddController(Controller<TMiddlewareContext> controller)
         {
             this.controllers.Add(controller);
         }
 
-        public void Invoke(IMiddlewareContext context, Action next)
+        public void Invoke(TMiddlewareContext context, Action next)
         {
-            foreach (Controller controller in this.controllers)
+            foreach (Controller<TMiddlewareContext> controller in this.controllers)
             {
                 if (controller.HeaderRoute.IsThisContextMatchThisController(context))
                 {

@@ -7,18 +7,19 @@ using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Listeners
 {
-    public class ListenersMapper
+    public class ListenersMapper<TMiddlewareContext>
     {
         // port -> listener
         private readonly Dictionary<int, Listener> listeners = new();
-        private readonly Pipeline pipeline;
-        private readonly IContextAdaptor contextAdaptor;
+        private readonly Pipeline<TMiddlewareContext> pipeline;
+        private readonly IContextAdaptor<TMiddlewareContext> contextAdaptor;
 
-        public ListenersMapper(ListenersMapperConfig config, Pipeline pipeline, IContextAdaptor contextAdaptor)
+        public ListenersMapper(ListenersMapperConfig config, Pipeline<TMiddlewareContext> pipeline, IContextAdaptor<TMiddlewareContext> contextAdaptor)
         {
             foreach (var listenerConfig in config.ListenerConfigs)
             {
-                Listener newListener = new(listenerConfig, this);
+                Listener newListener = new(listenerConfig);
+                newListener.PacketReceived += OnReceivePacket;
                 this.listeners[listenerConfig.ListeningPort] = newListener;
             }
 
@@ -34,9 +35,9 @@ namespace SocketBackendFramework.Listeners
             }
         }
 
-        public void OnReceivePacket(PacketContext context)
+        private void OnReceivePacket(object sender, PacketContext context)
         {
-            IMiddlewareContext middlewareContext = this.contextAdaptor.GetMiddlewareContext(context);
+            TMiddlewareContext middlewareContext = this.contextAdaptor.GetMiddlewareContext(context);
             this.pipeline.Entry(middlewareContext);
 
             context = this.contextAdaptor.GetPacketContext(middlewareContext);

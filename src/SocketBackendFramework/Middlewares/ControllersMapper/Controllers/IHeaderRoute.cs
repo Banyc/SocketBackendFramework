@@ -2,8 +2,8 @@ using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares.ControllersMapper.Controllers
 {
-    public interface IHeaderRoute
+    public interface IHeaderRoute<TMiddlewareContext>
     {
-	    bool IsThisContextMatchThisController(IMiddlewareContext context);
+	    bool IsThisContextMatchThisController(TMiddlewareContext context);
     }
 }

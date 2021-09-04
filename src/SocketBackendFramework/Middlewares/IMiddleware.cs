@@ -3,9 +3,9 @@ using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares
 {
-    public interface IMiddleware
+    public interface IMiddleware<TMiddlewareContext>
     {
         // MiddlewareActionDelegate Invoke { get; }
-        void Invoke(IMiddlewareContext context, Action next);
+        void Invoke(TMiddlewareContext context, Action next);
     }
 }

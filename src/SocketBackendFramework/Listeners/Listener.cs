@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Net;
 using SocketBackendFramework.Listeners.SocketHandlers;
@@ -8,16 +9,16 @@ namespace SocketBackendFramework.Listeners
 {
     public class Listener
     {
+        public event EventHandler<PacketContext> PacketReceived;
+
         private readonly ListenerConfig config;
-        private readonly ListenersMapper mapper;
         private readonly TcpServerHandler tcpServer;
         private readonly Dictionary<int, TcpSessionHandler> tcpSessions = new();
         private readonly UdpServerHandler udpServer;
 
-        public Listener(ListenerConfig config, ListenersMapper mapper)
+        public Listener(ListenerConfig config)
         {
             this.config = config;
-            this.mapper = mapper;
 
             // build system socket
             // don't start listening yet
@@ -97,7 +98,7 @@ namespace SocketBackendFramework.Listeners
                 RequestPacketRawOffset = offset,
                 RequestPacketRawSize = size,
             };
-            this.mapper.OnReceivePacket(context);
+            this.PacketReceived?.Invoke(this, context);
         }
     }
 }

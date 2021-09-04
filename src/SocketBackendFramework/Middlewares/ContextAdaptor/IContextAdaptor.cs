@@ -3,9 +3,9 @@ using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares.ContextAdaptor
 {
-    public interface IContextAdaptor
+    public interface IContextAdaptor<TMiddlewareContext>
     {
-        IMiddlewareContext GetMiddlewareContext(PacketContext packetContext);
-        PacketContext GetPacketContext(IMiddlewareContext middlewareContext);
+        TMiddlewareContext GetMiddlewareContext(PacketContext packetContext);
+        PacketContext GetPacketContext(TMiddlewareContext middlewareContext);
     }
 }

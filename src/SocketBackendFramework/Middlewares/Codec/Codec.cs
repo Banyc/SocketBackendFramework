@@ -1,18 +1,17 @@
 using System;
-using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares.Codec
 {
-    public class Codec : IMiddleware
+    public class Codec<TMiddlewareContext> : IMiddleware<TMiddlewareContext>
     {
-        private readonly IHeaderCodec headerCodec;
+        private readonly IHeaderCodec<TMiddlewareContext> headerCodec;
 
-        public Codec(IHeaderCodec headerCodec)
+        public Codec(IHeaderCodec<TMiddlewareContext> headerCodec)
         {
             this.headerCodec = headerCodec;
         }
 
-        public void Invoke(IMiddlewareContext context, Action next)
+        public void Invoke(TMiddlewareContext context, Action next)
         {
             this.headerCodec.DecodeRequest(context);
             next();

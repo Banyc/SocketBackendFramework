@@ -3,10 +3,10 @@ using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares.ControllersMapper.Controllers
 {
-    public abstract class Controller
+    public abstract class Controller<TMiddlewareContext>
     {
-        public IHeaderRoute HeaderRoute { get; set; }
+        public IHeaderRoute<TMiddlewareContext> HeaderRoute { get; set; }
         // TODO: action route
-        public abstract void Request(IMiddlewareContext context);
+        public abstract void Request(TMiddlewareContext context);
     }
 }

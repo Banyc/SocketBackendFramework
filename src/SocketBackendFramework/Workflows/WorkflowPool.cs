@@ -19,9 +19,9 @@ namespace SocketBackendFramework.Workflows
             return this.config.WorkflowConfigs.Find(xxxx => xxxx.Name == workflowName);
         }
 
-        public void AddWorkflow(WorkflowBuilder workflowBuilder)
+        public void AddWorkflow(Workflow workflow)
         {
-            this.workflows.Add(workflowBuilder.Build());
+            this.workflows.Add(workflow);
         }
 
         public void Start()

@@ -1,19 +1,16 @@
 using SocketBackendFramework.Middlewares.Codec;
-using SocketBackendFramework.Models.Middlewares;
 using SocketBackendFramework.Sample.Models;
 
 namespace SocketBackendFramework.Sample.Codec
 {
-    public class DefaultHeaderCodec : IHeaderCodec
+    public class DefaultHeaderCodec : IHeaderCodec<MiddlewareContext>
     {
-        public void DecodeRequest(IMiddlewareContext context)
+        public void DecodeRequest(MiddlewareContext context)
         {
-            MiddlewareContext contextInstance = (MiddlewareContext)context;
         }
 
-        public void EncodeResponse(IMiddlewareContext context)
+        public void EncodeResponse(MiddlewareContext context)
         {
-            MiddlewareContext contextInstance = (MiddlewareContext)context;
         }
     }
 }

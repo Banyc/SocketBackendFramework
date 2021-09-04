@@ -4,14 +4,14 @@ using SocketBackendFramework.Models.Middlewares;
 
 namespace SocketBackendFramework.Middlewares
 {
-    public class PipelineBuilder
+    public class PipelineBuilder<TMiddlewareContext>
     {
-        private readonly List<IMiddleware> middlewares = new();
+        private readonly List<IMiddleware<TMiddlewareContext>> middlewares = new();
         // private List<MiddlewareDelegate> middlewareActions = new();
-        private readonly List<Func<SocketRequestDelegate, SocketRequestDelegate>> pipeWrappers =
+        private readonly List<Func<MiddlewareRequestDelegate<TMiddlewareContext>, MiddlewareRequestDelegate<TMiddlewareContext>>> pipeWrappers =
             new();
 
-        public void UseMiddleware(IMiddleware middleware)
+        public void UseMiddleware(IMiddleware<TMiddlewareContext> middleware)
         {
             this.middlewares.Add(middleware);
             Use((context, next) =>
@@ -21,17 +21,17 @@ namespace SocketBackendFramework.Middlewares
         }
 
         // stack the pipeWrappers
-        public void Use(Func<SocketRequestDelegate, SocketRequestDelegate> pipeWrapper)
+        public void Use(Func<MiddlewareRequestDelegate<TMiddlewareContext>, MiddlewareRequestDelegate<TMiddlewareContext>> pipeWrapper)
         {
             this.pipeWrappers.Add(pipeWrapper);
         }
 
-        public void Use(MiddlewareActionDelegate middlewareAction)
+        public void Use(MiddlewareActionDelegate<TMiddlewareContext> middlewareAction)
         {
-            Func<SocketRequestDelegate, SocketRequestDelegate> pipeWrapper = next =>
+            Func<MiddlewareRequestDelegate<TMiddlewareContext>, MiddlewareRequestDelegate<TMiddlewareContext>> pipeWrapper = next =>
             {
                 // preset the `context` value to the `next` parameter in `middlewareAction`
-                SocketRequestDelegate presetPipe = context =>
+                MiddlewareRequestDelegate<TMiddlewareContext> presetPipe = context =>
                 {
                     // the object pointer (`context`) has been saved in `simpleNext`
                     Action simpleNext = () =>
@@ -48,9 +48,9 @@ namespace SocketBackendFramework.Middlewares
             Use(pipeWrapper);
         }
 
-        public SocketRequestDelegate Build()
+        public MiddlewareRequestDelegate<TMiddlewareContext> Build()
         {
-            SocketRequestDelegate nextWrappedPine = null;
+            MiddlewareRequestDelegate<TMiddlewareContext> nextWrappedPine = null;
 
             int i;
             for (i = this.pipeWrappers.Count - 1; i >= 0; i--)
