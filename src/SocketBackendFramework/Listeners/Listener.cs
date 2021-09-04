@@ -61,7 +61,8 @@ namespace SocketBackendFramework.Listeners
                     this.tcpSessions[context.RemotePort].Send(context.ResponsePacketRaw.ToArray());
                     break;
                 case ExclusiveTransportType.Udp:
-                    this.udpServer.Send(context.ResponsePacketRaw.ToArray());
+                    this.udpServer.Send(new IPEndPoint(context.RemoteIp, context.RemotePort),
+                                        context.ResponsePacketRaw.ToArray());
                     break;
             }
         }
