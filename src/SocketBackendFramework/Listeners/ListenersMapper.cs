@@ -11,7 +11,7 @@ namespace SocketBackendFramework.Listeners
         private readonly Dictionary<int, Listener> listeners = new();
         private readonly Pipeline pipeline;
 
-        public ListenersMapper(ListenersMapperConfig config, PipelineBuilder pipelineBuilder)
+        public ListenersMapper(ListenersMapperConfig config, Pipeline pipeline)
         {
             foreach (var listenerConfig in config.ListenerConfigs)
             {
@@ -19,10 +19,7 @@ namespace SocketBackendFramework.Listeners
                 this.listeners[listenerConfig.ListeningPort] = newListener;
             }
 
-            this.pipeline = new()
-            {
-                Entry = pipelineBuilder.Build()
-            };
+            this.pipeline = pipeline;
         }
 
         public void Start()
