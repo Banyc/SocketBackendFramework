@@ -1,15 +1,13 @@
-using System;
-using System.Collections.Generic;
-namespace SocketBackendFramework.Relay.TwoWayPipeline
+namespace SocketBackendFramework.Relay.Pipeline
 {
-    public class TwoWayPipeline<TMiddlewareContext> : ITwoWayMiddleware<TMiddlewareContext>
+    public class Pipeline<TMiddlewareContext> : IMiddleware<TMiddlewareContext>
     {
         public event EventHandler<TMiddlewareContext> GoneDown;
         public event EventHandler<TMiddlewareContext> GoneUp;
 
-        private readonly List<ITwoWayMiddleware<TMiddlewareContext>> middlewares;
+        private readonly List<IMiddleware<TMiddlewareContext>> middlewares;
 
-        public TwoWayPipeline(List<ITwoWayMiddleware<TMiddlewareContext>> middlewares)
+        public Pipeline(List<IMiddleware<TMiddlewareContext>> middlewares)
         {
             this.middlewares = middlewares;
         }

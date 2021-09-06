@@ -1,19 +1,19 @@
 using SocketBackendFramework.Relay.ContextAdaptor;
 using SocketBackendFramework.Relay.Models;
 using SocketBackendFramework.Relay.Models.Transport;
+using SocketBackendFramework.Relay.Pipeline;
 using SocketBackendFramework.Relay.Transport.Listeners;
-using SocketBackendFramework.Relay.TwoWayPipeline;
 
 namespace SocketBackendFramework.Relay.Transport
 {
-    public class TwoWayTransportMapper<TMiddlewareContext>
+    public class TransportMapper<TMiddlewareContext>
     {
         // port -> listener
         private readonly Dictionary<int, Listener> listeners = new();
-        private readonly TwoWayPipeline<TMiddlewareContext> pipeline;
+        private readonly Pipeline<TMiddlewareContext> pipeline;
         private readonly IContextAdaptor<TMiddlewareContext> contextAdaptor;
 
-        public TwoWayTransportMapper(TransportMapperConfig config, TwoWayPipeline<TMiddlewareContext> pipeline, IContextAdaptor<TMiddlewareContext> contextAdaptor)
+        public TransportMapper(TransportMapperConfig config, Pipeline<TMiddlewareContext> pipeline, IContextAdaptor<TMiddlewareContext> contextAdaptor)
         {
             foreach (var listenerConfig in config.ListenerConfigs)
             {
