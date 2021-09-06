@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace SocketBackendFramework.Relay.Pipeline
 {
     public class PipelineBuilder<TMiddlewareContext>

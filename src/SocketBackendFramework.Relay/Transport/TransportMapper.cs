@@ -6,10 +6,22 @@ using SocketBackendFramework.Relay.Transport.Listeners;
 
 namespace SocketBackendFramework.Relay.Transport
 {
-    public class TransportMapper<TMiddlewareContext>
+    public class TransportMapper
     {
         // port -> listener
-        private readonly Dictionary<int, Listener> listeners = new();
+        protected readonly Dictionary<int, Listener> listeners = new();
+
+        public void Start()
+        {
+            foreach ((_, Listener listener) in this.listeners)
+            {
+                listener.Start();
+            }
+        }
+    }
+
+    public class TransportMapper<TMiddlewareContext> : TransportMapper
+    {
         private readonly Pipeline<TMiddlewareContext> pipeline;
         private readonly IContextAdaptor<TMiddlewareContext> contextAdaptor;
 
@@ -25,14 +37,6 @@ namespace SocketBackendFramework.Relay.Transport
             this.pipeline = pipeline;
             pipeline.GoneUp += this.OnSendingPacket;
             this.contextAdaptor = contextAdaptor;
-        }
-
-        public void Start()
-        {
-            foreach ((_, Listener listener) in this.listeners)
-            {
-                listener.Start();
-            }
         }
 
         private void OnReceivePacket(object sender, PacketContext context)
