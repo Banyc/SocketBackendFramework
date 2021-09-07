@@ -1,5 +1,5 @@
 using SocketBackendFramework.Relay.Models.Workflows;
-using SocketBackendFramework.Relay.Transport;
+using SocketBackendFramework.Relay.Pipeline;
 
 namespace SocketBackendFramework.Relay.Workflow
 {
@@ -8,20 +8,27 @@ namespace SocketBackendFramework.Relay.Workflow
         public string Name { get => this.config.Name; }
 
         private readonly WorkflowConfig config;
-        private readonly List<TransportMapper> transportMappers;
+        private readonly List<PipelineDomain> PipelineDomains;
 
-        public Workflow(WorkflowConfig config, List<TransportMapper> transportMappers)
+        public Workflow(WorkflowConfig config,
+                        List<PipelineDomain> PipelineDomains)
         {
             this.config = config;
-            this.transportMappers = transportMappers;
+            this.PipelineDomains = PipelineDomains;
         }
 
         public void Start()
         {
-            foreach (var transportMapper in this.transportMappers)
+            foreach (var PipelineDomain in this.PipelineDomains)
             {
-                transportMapper.Start();
+                PipelineDomain.Start();
             }
+        }
+
+        public async Task RunAsync()
+        {
+            this.Start();
+            await Task.Delay(-1);
         }
     }
 }

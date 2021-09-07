@@ -27,7 +27,7 @@ namespace SocketBackendFramework.Relay.Transport
 
         public TransportMapper(TransportMapperConfig config, Pipeline<TMiddlewareContext> pipeline, IContextAdaptor<TMiddlewareContext> contextAdaptor)
         {
-            foreach (var listenerConfig in config.ListenerConfigs)
+            foreach (var listenerConfig in config.Listeners)
             {
                 Listener newListener = new(listenerConfig);
                 newListener.PacketReceived += OnReceivePacket;
@@ -48,7 +48,15 @@ namespace SocketBackendFramework.Relay.Transport
         private void OnSendingPacket(object sender, TMiddlewareContext middlewareContext)
         {
             PacketContext context = this.contextAdaptor.GetPacketContext(middlewareContext);
-            this.listeners[context.LocalPort].Respond(context);
+            if (context.LocalPort != null)
+            {
+                this.listeners[context.LocalPort.Value].Respond(context);
+            }
+            else
+            {
+                // TODO: create a dedicated client to send the packet
+                throw new NotImplementedException();
+            }
         }
     }
 }
