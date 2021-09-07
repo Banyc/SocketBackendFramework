@@ -13,24 +13,24 @@ namespace SocketBackendFramework.Relay.Pipeline
             this.config = config;
         }
 
-        protected abstract PipelineDomain<TMiddlewareContext> Build();
+        public abstract PipelineDomain<TMiddlewareContext> Build();
 
-        protected PipelineDomain<TMiddlewareContext> Build(PipelineBuilder<TMiddlewareContext> pipelineBuilder,
+        protected PipelineDomain<TMiddlewareContext> Build(Pipeline<TMiddlewareContext> pipeline,
                                                            IContextAdaptor<TMiddlewareContext> contextAdaptor)
         {
-            ConfigurateMiddlewares(pipelineBuilder);
+            ConfigurateMiddlewares(pipeline);
 
-            Pipeline<TMiddlewareContext> pipeline = pipelineBuilder.Build();
             TransportMapper<TMiddlewareContext> TransportMapper =
                 new(config.TransportMapper, pipeline, contextAdaptor);
 
             PipelineDomain<TMiddlewareContext> pipelineDomain = new(
                 this.config,
-                TransportMapper
+                TransportMapper,
+                pipeline
             );
             return pipelineDomain;
         }
 
-        protected abstract void ConfigurateMiddlewares(PipelineBuilder<TMiddlewareContext> pipelineBuilder);
+        protected abstract void ConfigurateMiddlewares(Pipeline<TMiddlewareContext> pipeline);
     }
 }

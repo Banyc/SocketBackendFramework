@@ -1,7 +1,7 @@
 using SocketBackendFramework.Relay.Models.Workflows;
 using SocketBackendFramework.Relay.Pipeline;
 
-namespace SocketBackendFramework.Relay.Workflow
+namespace SocketBackendFramework.Relay.Workflows
 {
     public class Workflow
     {

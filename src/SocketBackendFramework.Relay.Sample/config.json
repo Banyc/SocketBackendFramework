@@ -1,0 +1,23 @@
+{
+    "WorkflowPool": {
+        "Workflows": [
+            {
+                "Name": "default",
+                "PipelineDomains": [
+                    {
+                        "Name": "default",
+                        "ListenersMapper": {
+                            "Listeners": [
+                                {
+                                    "ListeningPort": 8080,
+                                    "TransportType": "Udp"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+    // users' configurations here
+}

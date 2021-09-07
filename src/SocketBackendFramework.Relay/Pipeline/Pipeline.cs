@@ -1,11 +1,11 @@
 namespace SocketBackendFramework.Relay.Pipeline
 {
-    public class Pipeline<TMiddlewareContext> : IMiddleware<TMiddlewareContext>
+    public partial class Pipeline<TMiddlewareContext> : IMiddleware<TMiddlewareContext>
     {
         public event EventHandler<TMiddlewareContext> GoneDown;
         public event EventHandler<TMiddlewareContext> GoneUp;
 
-        private readonly List<IMiddleware<TMiddlewareContext>> middlewares;
+        private readonly List<IMiddleware<TMiddlewareContext>> middlewares = new();
 
         public Pipeline(List<IMiddleware<TMiddlewareContext>> middlewares)
         {

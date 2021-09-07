@@ -17,13 +17,16 @@ namespace SocketBackendFramework.Relay.Pipeline
 
     public class PipelineDomain<TMiddlewareContext> : PipelineDomain
     {
+        public Pipeline<TMiddlewareContext> Pipeline { get; }
         private readonly TransportMapper<TMiddlewareContext> transportMapper;
 
         public PipelineDomain(PipelineDomainConfig config,
-                              TransportMapper<TMiddlewareContext> transportMapper)
+                              TransportMapper<TMiddlewareContext> transportMapper,
+                              Pipeline<TMiddlewareContext> pipeline)
             : base(config)
         {
             this.transportMapper = transportMapper;
+            this.Pipeline = pipeline;
         }
 
         public override void Start()
