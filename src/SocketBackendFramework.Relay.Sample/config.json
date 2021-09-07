@@ -6,7 +6,7 @@
                 "PipelineDomains": [
                     {
                         "Name": "default",
-                        "ListenersMapper": {
+                        "TransportMapper": {
                             "Listeners": [
                                 {
                                     "ListeningPort": 8080,
