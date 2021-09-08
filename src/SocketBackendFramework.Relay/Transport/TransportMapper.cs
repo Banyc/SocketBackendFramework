@@ -2,20 +2,64 @@ using SocketBackendFramework.Relay.ContextAdaptor;
 using SocketBackendFramework.Relay.Models;
 using SocketBackendFramework.Relay.Models.Transport;
 using SocketBackendFramework.Relay.Pipeline;
+using SocketBackendFramework.Relay.Transport.Clients;
 using SocketBackendFramework.Relay.Transport.Listeners;
 
 namespace SocketBackendFramework.Relay.Transport
 {
-    public class TransportMapper
+    public abstract class TransportMapper
     {
-        // port -> listener
+        // local port -> listener
         protected readonly Dictionary<int, Listener> listeners = new();
+        // local port -> client
+        protected readonly Dictionary<int, TransportClient> clients = new();
+
+        protected TransportMapper(TransportMapperConfig config)
+        {
+            foreach (var listenerConfig in config.Listeners)
+            {
+                Listener newListener = new(listenerConfig);
+                newListener.PacketReceived += OnReceivePacket;
+                this.listeners[listenerConfig.ListeningPort] = newListener;
+            }
+        }
 
         public void Start()
         {
             foreach ((_, Listener listener) in this.listeners)
             {
                 listener.Start();
+            }
+        }
+
+        protected abstract void OnReceivePacket(object sender, PacketContext context);
+
+        protected void OnSendingPacket(object sender, PacketContext context)
+        {
+            if (context.LocalPort != null && context.ClientConfig == null)
+            {
+                if (this.listeners.ContainsKey(context.LocalPort.Value))
+                {
+                    this.listeners[context.LocalPort.Value].Respond(context);
+                }
+                else
+                {
+                    this.clients[context.LocalPort.Value].Respond(context);
+                }
+            }
+            else
+            {
+                // create a dedicated client to send the packet
+                TransportClient newClient = new(context.ClientConfig);
+                newClient.PacketReceived += OnReceivePacket;
+                newClient.TcpClientDisconnected += sender => {
+                    TransportClient client = (TransportClient)sender;
+                    int localPort = client.LocalPort;
+                    this.clients.Remove(localPort);
+                    client.Dispose();
+                };
+                newClient.Respond(context);
+                this.clients[newClient.LocalPort] = newClient;
             }
         }
     }
@@ -26,20 +70,14 @@ namespace SocketBackendFramework.Relay.Transport
         private readonly IContextAdaptor<TMiddlewareContext> contextAdaptor;
 
         public TransportMapper(TransportMapperConfig config, Pipeline<TMiddlewareContext> pipeline, IContextAdaptor<TMiddlewareContext> contextAdaptor)
+            : base(config)
         {
-            foreach (var listenerConfig in config.Listeners)
-            {
-                Listener newListener = new(listenerConfig);
-                newListener.PacketReceived += OnReceivePacket;
-                this.listeners[listenerConfig.ListeningPort] = newListener;
-            }
-
             this.pipeline = pipeline;
             pipeline.GoneUp += this.OnSendingPacket;
             this.contextAdaptor = contextAdaptor;
         }
 
-        private void OnReceivePacket(object sender, PacketContext context)
+        protected override void OnReceivePacket(object sender, PacketContext context)
         {
             TMiddlewareContext middlewareContext = this.contextAdaptor.GetMiddlewareContext(context);
             this.pipeline.GoDown(middlewareContext);
@@ -48,15 +86,7 @@ namespace SocketBackendFramework.Relay.Transport
         private void OnSendingPacket(object sender, TMiddlewareContext middlewareContext)
         {
             PacketContext context = this.contextAdaptor.GetPacketContext(middlewareContext);
-            if (context.LocalPort != null)
-            {
-                this.listeners[context.LocalPort.Value].Respond(context);
-            }
-            else
-            {
-                // TODO: create a dedicated client to send the packet
-                throw new NotImplementedException();
-            }
+            base.OnSendingPacket(sender, context);
         }
     }
 }

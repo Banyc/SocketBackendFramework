@@ -1,4 +1,5 @@
 using System.Net;
+using SocketBackendFramework.Relay.Models.Transport.Clients;
 
 namespace SocketBackendFramework.Relay.Models
 {
@@ -13,10 +14,9 @@ namespace SocketBackendFramework.Relay.Models
         public byte[]? RequestPacketRawBuffer { get; set; }
         public long RequestPacketRawOffset { get; set; }
         public long RequestPacketRawSize { get; set; }
-        public bool ShouldRespond { get; set; }
         public List<byte> ResponsePacketRaw { get; set; } = new();
 
         // necessary if this.LocalPort is null 
-        public TimeSpan ClientDisposeTimeout { get; set; }
+        public TransportClientConfig? ClientConfig { get; set; }
     }
 }

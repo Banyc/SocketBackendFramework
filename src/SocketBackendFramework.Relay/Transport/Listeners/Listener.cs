@@ -5,7 +5,7 @@ using SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers;
 
 namespace SocketBackendFramework.Relay.Transport.Listeners
 {
-    public class Listener
+    public class Listener : ITransportAgent
     {
         public event EventHandler<PacketContext> PacketReceived;
 
@@ -49,10 +49,6 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
 
         public void Respond(PacketContext context)
         {
-            if (!context.ShouldRespond)
-            {
-                return;
-            }
             switch (config.TransportType)
             {
                 case ExclusiveTransportType.Tcp:
@@ -70,10 +66,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
             IPEndPoint remoteEndPoint = (IPEndPoint)session.Socket.RemoteEndPoint;
             int remotePort = remoteEndPoint.Port;
             this.tcpSessions[remotePort] = session;
-            session.Received += (object sender, byte[] buffer, long offset, long size) =>
-            {
-                this.OnReceive(sender, remoteEndPoint, buffer, offset, size);
-            };
+            session.Received += this.OnReceive;
             session.Disconnected += OnTcpSessionDisconnected;
         }
 
