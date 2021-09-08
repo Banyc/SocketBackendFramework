@@ -15,7 +15,7 @@ namespace SocketBackendFramework.Relay.Workflows
 
         public WorkflowConfig GetWorkflowConfig(string workflowName)
         {
-            return this.config.Workflows.Find(xxxx => xxxx.Name == workflowName);
+            return this.config.Workflows.Single(xxxx => xxxx.Name == workflowName);
         }
 
         public void AddWorkflow(Workflow workflow)
