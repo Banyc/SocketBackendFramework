@@ -9,6 +9,11 @@ namespace SocketBackendFramework.Relay.Transport.Clients
     public class TransportClient : ITransportAgent, IDisposable
     {
         public event EventHandler<PacketContext> PacketReceived;
+
+        // tell transport mapper to dispose this
+        public event DisconnectedEventHandler TcpClientDisconnected;
+        public event DisconnectedEventHandler ClientTimedOut;
+
         public int LocalPort
         {
             get
@@ -28,9 +33,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             }
         }
 
-        // tell transport mapper to dispose this
-        public event DisconnectedEventHandler TcpClientDisconnected;
-
+        private readonly System.Timers.Timer timer;
         private readonly TcpClientHandler? tcpClient;
         private readonly UdpClientHandler? udpClient;
 
@@ -53,10 +56,17 @@ namespace SocketBackendFramework.Relay.Transport.Clients
                     this.udpClient.Received += OnReceive;
                     break;
             }
+
+            this.timer = new()
+            {
+                Interval = config.ClientDisposeTimeout.TotalMilliseconds,
+            };
+            this.timer.Elapsed += (sender, e) => this.ClientTimedOut?.Invoke(sender);
         }
 
         public void Respond(PacketContext context)
         {
+            this.timer.Stop();
             switch (this.config.TransportType)
             {
                 case Models.Transport.Listeners.ExclusiveTransportType.Tcp:
@@ -66,15 +76,18 @@ namespace SocketBackendFramework.Relay.Transport.Clients
                     this.udpClient.Send(context.ResponsePacketRaw.ToArray());
                     break;
             }
+            this.timer.Start();
         }
 
         public void Dispose()
         {
+            this.timer.Dispose();
             this.tcpClient.Dispose();
         }
 
         private void OnReceive(object sender, EndPoint remoteEndpoint, byte[] buffer, long offset, long size)
         {
+            this.timer.Stop();
             IPEndPoint remoteIPEndPoint = (IPEndPoint)remoteEndpoint;
             PacketContext context = new()
             {
@@ -86,6 +99,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
                 RequestPacketRawSize = size,
             };
             this.PacketReceived?.Invoke(this, context);
+            this.timer.Start();
         }
     }
 }

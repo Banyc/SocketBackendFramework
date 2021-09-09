@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using SocketBackendFramework.Relay.ContextAdaptor;
 using SocketBackendFramework.Relay.Models;
 using SocketBackendFramework.Relay.Models.Transport;
@@ -12,7 +13,7 @@ namespace SocketBackendFramework.Relay.Transport
         // local port -> listener
         protected readonly Dictionary<int, Listener> listeners = new();
         // local port -> client
-        protected readonly Dictionary<int, TransportClient> clients = new();
+        protected readonly ConcurrentDictionary<int, TransportClient> clients = new();
 
         protected TransportMapper(TransportMapperConfig config)
         {
@@ -52,12 +53,15 @@ namespace SocketBackendFramework.Relay.Transport
                 // create a dedicated client to send the packet
                 TransportClient newClient = new(context.ClientConfig);
                 newClient.PacketReceived += OnReceivePacket;
-                newClient.TcpClientDisconnected += sender => {
+                void DisposeClient(object sender)
+                {
                     TransportClient client = (TransportClient)sender;
                     int localPort = client.LocalPort;
-                    this.clients.Remove(localPort);
+                    this.clients.Remove(localPort, out _);
                     client.Dispose();
-                };
+                }
+                newClient.TcpClientDisconnected += DisposeClient;
+                newClient.ClientTimedOut += DisposeClient;
                 newClient.Respond(context);
                 this.clients[newClient.LocalPort] = newClient;
             }
