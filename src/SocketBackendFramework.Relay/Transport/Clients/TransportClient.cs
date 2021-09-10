@@ -50,10 +50,12 @@ namespace SocketBackendFramework.Relay.Transport.Clients
                     this.tcpClient = new(config.RemoteAddress, config.RemotePort);
                     this.tcpClient.Disconnected += TcpClientDisconnected;
                     this.tcpClient.Received += OnReceive;
+                    this.tcpClient.Connect();
                     break;
                 case Models.Transport.Listeners.ExclusiveTransportType.Udp:
                     this.udpClient = new(config.RemoteAddress, config.RemotePort);
                     this.udpClient.Received += OnReceive;
+                    this.udpClient.Connect();
                     break;
             }
 
@@ -61,7 +63,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             {
                 Interval = config.ClientDisposeTimeout.TotalMilliseconds,
             };
-            this.timer.Elapsed += (sender, e) => this.ClientTimedOut?.Invoke(sender);
+            this.timer.Elapsed += (sender, e) => this.ClientTimedOut?.Invoke(this);
         }
 
         public void Respond(PacketContext context)
@@ -82,7 +84,8 @@ namespace SocketBackendFramework.Relay.Transport.Clients
         public void Dispose()
         {
             this.timer.Dispose();
-            this.tcpClient.Dispose();
+            this.tcpClient?.Dispose();
+            this.udpClient?.Dispose();
         }
 
         private void OnReceive(object sender, EndPoint remoteEndpoint, byte[] buffer, long offset, long size)
