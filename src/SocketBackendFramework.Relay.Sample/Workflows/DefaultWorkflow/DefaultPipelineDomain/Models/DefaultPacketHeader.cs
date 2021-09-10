@@ -4,7 +4,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
     {
         NoReply,
         Echo,
-        Forward,
+        EchoByClient,
     }
 
     public class DefaultPacketHeader
