@@ -10,9 +10,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/SocketBackendFramework.Sample/bin/Debug/net6.0/SocketBackendFramework.Sample.dll",
+            "program": "${workspaceFolder}/src/SocketBackendFramework.Relay.Sample/bin/Debug/net6.0/SocketBackendFramework.Relay.Sample.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/src/SocketBackendFramework.Sample",
+            "cwd": "${workspaceFolder}/src/SocketBackendFramework.Relay.Sample",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "stopAtEntry": false
