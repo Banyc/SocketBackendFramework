@@ -5,6 +5,9 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 {
     public class TcpSessionHandler : TcpSession
     {
+        public IPEndPoint LocalIPEndPoint { get; private set; }
+        public IPEndPoint RemoteIPEndPoint { get; private set; }
+
         public delegate void ReceivedEventHandler(object sender, EndPoint remoteEndpoint, byte[] buffer, long offset, long size);
         public event ReceivedEventHandler Received;
 
@@ -13,6 +16,13 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 
         public TcpSessionHandler(TcpServer server) : base(server)
         {
+        }
+
+        protected override void OnConnected()
+        {
+            base.OnConnected();
+            this.LocalIPEndPoint = (IPEndPoint)base.Socket.LocalEndPoint;
+            this.RemoteIPEndPoint = (IPEndPoint)base.Socket.RemoteEndPoint;
         }
 
         protected override void OnReceived(byte[] buffer, long offset, long size)

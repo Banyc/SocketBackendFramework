@@ -80,9 +80,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
         private void OnTcpSessionDisconnected(object sender)
         {
             TcpSessionHandler session = (TcpSessionHandler)sender;
-            IPEndPoint remoteEndPoint = (IPEndPoint)session.Socket.RemoteEndPoint;
-            int remotePort = remoteEndPoint.Port;
-            this.tcpSessions.Remove(remotePort);
+            this.tcpSessions.Remove(session.RemoteIPEndPoint.Port);
         }
 
         private void OnReceive(object sender, EndPoint remoteEndpoint, byte[] buffer, long offset, long size)
