@@ -1,5 +1,6 @@
 using System.Net;
 using SocketBackendFramework.Relay.Models;
+using SocketBackendFramework.Relay.Models.Transport;
 using SocketBackendFramework.Relay.Models.Transport.Listeners;
 using SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers;
 

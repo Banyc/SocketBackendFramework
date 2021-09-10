@@ -1,5 +1,6 @@
 using System.Net;
 using SocketBackendFramework.Relay.Models;
+using SocketBackendFramework.Relay.Models.Transport;
 using SocketBackendFramework.Relay.Models.Transport.Clients;
 using SocketBackendFramework.Relay.Transport.Clients.SocketHandlers;
 using static SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers.TcpSessionHandler;
@@ -20,10 +21,10 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             {
                 switch (this.config.TransportType)
                 {
-                    case Models.Transport.Listeners.ExclusiveTransportType.Tcp:
+                    case ExclusiveTransportType.Tcp:
                         return ((IPEndPoint)this.tcpClient.Socket.LocalEndPoint).Port;
                         break;
-                    case Models.Transport.Listeners.ExclusiveTransportType.Udp:
+                    case ExclusiveTransportType.Udp:
                         return ((IPEndPoint)this.udpClient.Socket.LocalEndPoint).Port;
                         break;
                     default:
@@ -46,13 +47,13 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             // build client
             switch (config.TransportType)
             {
-                case Models.Transport.Listeners.ExclusiveTransportType.Tcp:
+                case ExclusiveTransportType.Tcp:
                     this.tcpClient = new(config.RemoteAddress, config.RemotePort);
                     this.tcpClient.Disconnected += TcpClientDisconnected;
                     this.tcpClient.Received += OnReceive;
                     this.tcpClient.Connect();
                     break;
-                case Models.Transport.Listeners.ExclusiveTransportType.Udp:
+                case ExclusiveTransportType.Udp:
                     this.udpClient = new(config.RemoteAddress, config.RemotePort);
                     this.udpClient.Received += OnReceive;
                     this.udpClient.Connect();
@@ -71,10 +72,10 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             this.timer.Stop();
             switch (this.config.TransportType)
             {
-                case Models.Transport.Listeners.ExclusiveTransportType.Tcp:
+                case ExclusiveTransportType.Tcp:
                     this.tcpClient.SendAfterConnected(context.ResponsePacketRaw.ToArray());
                     break;
-                case Models.Transport.Listeners.ExclusiveTransportType.Udp:
+                case ExclusiveTransportType.Udp:
                     this.udpClient.Send(context.ResponsePacketRaw.ToArray());
                     break;
             }

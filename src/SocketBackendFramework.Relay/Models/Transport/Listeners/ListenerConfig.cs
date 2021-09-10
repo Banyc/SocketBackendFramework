@@ -1,11 +1,7 @@
+using SocketBackendFramework.Relay.Models.Transport;
+
 namespace SocketBackendFramework.Relay.Models.Transport.Listeners
 {
-    public enum ExclusiveTransportType
-    {
-        Tcp,
-        Udp,
-    }
-
     public class ListenerConfig
     {
         public int ListeningPort { get; set; }
