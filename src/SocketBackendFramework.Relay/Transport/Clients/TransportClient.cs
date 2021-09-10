@@ -28,11 +28,32 @@ namespace SocketBackendFramework.Relay.Transport.Clients
                         return ((IPEndPoint)this.udpClient.Socket.LocalEndPoint).Port;
                         break;
                     default:
-                        return -1;
+                        throw new ArgumentException();
                         break;
                 }
             }
         }
+
+        public IPAddress LocalIpAddress
+        {
+            get
+            {
+                switch (this.config.TransportType)
+                {
+                    case ExclusiveTransportType.Tcp:
+                        return ((IPEndPoint)this.tcpClient.Socket.LocalEndPoint).Address;
+                        break;
+                    case ExclusiveTransportType.Udp:
+                        return ((IPEndPoint)this.udpClient.Socket.LocalEndPoint).Address;
+                        break;
+                    default:
+                        throw new ArgumentException();
+                        break;
+                }
+            }
+        }
+
+        public uint TransportAgentId { get; }
 
         private readonly System.Timers.Timer timer;
         private readonly TcpClientHandler? tcpClient;
@@ -40,9 +61,10 @@ namespace SocketBackendFramework.Relay.Transport.Clients
 
         private TransportClientConfig config;
 
-        public TransportClient(TransportClientConfig config)
+        public TransportClient(TransportClientConfig config, uint transportAgentId)
         {
             this.config = config;
+            this.TransportAgentId = transportAgentId;
 
             // build client
             switch (config.TransportType)
@@ -95,9 +117,13 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             IPEndPoint remoteIPEndPoint = (IPEndPoint)remoteEndpoint;
             PacketContext context = new()
             {
+                PacketContextType = PacketContextType.ApplicationMessaging,
+                LocalIp = this.LocalIpAddress,
                 LocalPort = this.LocalPort,
                 RemoteIp = remoteIPEndPoint.Address,
                 RemotePort = remoteIPEndPoint.Port,
+                TransportAgentId = this.TransportAgentId,
+                TransportType = this.config.TransportType,
                 RequestPacketRawBuffer = buffer,
                 RequestPacketRawOffset = offset,
                 RequestPacketRawSize = size,

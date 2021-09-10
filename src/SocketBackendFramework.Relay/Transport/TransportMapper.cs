@@ -19,11 +19,13 @@ namespace SocketBackendFramework.Relay.Transport
         {
             foreach (var listenerConfig in config.Listeners)
             {
-                Listener newListener = new(listenerConfig);
+                Listener newListener = new(listenerConfig, this.transportAgentIdCounter++);
                 newListener.PacketReceived += OnReceivePacket;
                 this.listeners[listenerConfig.ListeningPort] = newListener;
             }
         }
+
+        private uint transportAgentIdCounter = 0;
 
         public void Start()
         {
@@ -37,21 +39,34 @@ namespace SocketBackendFramework.Relay.Transport
 
         protected void OnSendingPacket(object sender, PacketContext context)
         {
-            if (context.LocalPort != null && context.ClientConfig == null)
+            switch (context.PacketContextType)
             {
-                if (this.listeners.ContainsKey(context.LocalPort.Value))
+                case PacketContextType.ApplicationMessaging:
+                    SendApplicationMessage(sender, context);
+                    break;
+                default:
+                    throw new ArgumentException();
+                    break;
+            }
+        }
+
+        protected void SendApplicationMessage(object sender, PacketContext context)
+        {
+            if (context.ClientConfig == null)
+            {
+                if (this.listeners.ContainsKey(context.LocalPort))
                 {
-                    this.listeners[context.LocalPort.Value].Respond(context);
+                    this.listeners[context.LocalPort].Respond(context);
                 }
                 else
                 {
-                    this.clients[context.LocalPort.Value].Respond(context);
+                    this.clients[context.LocalPort].Respond(context);
                 }
             }
             else
             {
                 // create a dedicated client to send the packet
-                TransportClient newClient = new(context.ClientConfig);
+                TransportClient newClient = new(context.ClientConfig, this.transportAgentIdCounter++);
                 newClient.PacketReceived += OnReceivePacket;
                 void DisposeClient(object sender)
                 {
