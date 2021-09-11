@@ -36,8 +36,10 @@ namespace SocketBackendFramework.Relay.Transport
             }
         }
 
+        // pass packet context down to pipeline
         protected abstract void OnReceivePacket(object sender, PacketContext context);
 
+        // receive packet context from pipeline
         protected void OnSendingPacket(object sender, PacketContext context)
         {
             switch (context.PacketContextType)
@@ -60,11 +62,12 @@ namespace SocketBackendFramework.Relay.Transport
             {
                 this.listeners[context.LocalPort].DisconnectTcpSession(context);
             }
-            else
+            else if (this.clients.ContainsKey(context.LocalPort))
             {
                 // don't dispose client since it will trigger a disposal process on the disconnection event.
                 this.clients[context.LocalPort].Disconnect();
             }
+            // else, the tcp session or the client might be disposed and removed from the list.
         }
 
         private void SendApplicationMessage(object sender, PacketContext context)
@@ -92,12 +95,16 @@ namespace SocketBackendFramework.Relay.Transport
                     this.clients.Remove(localPort, out _);
                     client.Dispose();
                 }
-                newClient.TcpClientDisconnected += (sender, _) => DisposeClient(sender);
+                newClient.TcpClientDisconnected += (sender, context) =>
+                {
+                    // dispose client before sending the event to pipeline
+                    DisposeClient(sender);
+                    this.OnReceivePacket(sender, context);
+                };
                 newClient.ClientTimedOut += sender => {
                     TransportClient client = (TransportClient)sender;
                     client.Disconnect();
                 };
-                newClient.TcpClientDisconnected += OnReceivePacket;
                 newClient.Respond(context);
                 this.clients[newClient.LocalIPEndPoint.Port] = newClient;
             }

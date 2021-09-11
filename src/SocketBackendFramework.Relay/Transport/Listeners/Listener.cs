@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using SocketBackendFramework.Relay.Models;
 using SocketBackendFramework.Relay.Models.Transport;
@@ -15,7 +16,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
         private readonly TcpServerHandler tcpServer;
 
         // remote port -> tcp session
-        private readonly Dictionary<int, TcpSessionHandler> tcpSessions = new();
+        private readonly ConcurrentDictionary<int, TcpSessionHandler> tcpSessions = new();
 
         private readonly UdpServerHandler udpServer;
 
@@ -108,7 +109,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
                 TransportAgentId = this.TransportAgentId,
                 TransportType = ExclusiveTransportType.Tcp,
             });
-            this.tcpSessions.Remove(session.RemoteIPEndPoint.Port);
+            this.tcpSessions.Remove(session.RemoteIPEndPoint.Port, out _);
         }
 
         private void OnReceive(object sender, EndPoint remoteEndpoint, byte[] buffer, long offset, long size)
