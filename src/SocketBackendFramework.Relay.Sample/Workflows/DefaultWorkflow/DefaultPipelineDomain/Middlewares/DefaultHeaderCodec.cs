@@ -1,4 +1,5 @@
 using System.Text;
+using SocketBackendFramework.Relay.Models;
 using SocketBackendFramework.Relay.Pipeline.Middlewares.Codec;
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Models;
 
@@ -8,6 +9,10 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
     {
         public void DecodeRequest(DefaultMiddlewareContext context)
         {
+            if (context.PacketContext.PacketContextType != PacketContextType.ApplicationMessaging)
+            {
+                return;
+            }
             int typeFieldOffset = 0;
             int typeFieldSize = 1;
             int typeField = context.PacketContext.RequestPacketRawBuffer[typeFieldOffset];
@@ -22,6 +27,10 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public void EncodeResponse(DefaultMiddlewareContext context)
         {
+            if (context.PacketContext.PacketContextType != PacketContextType.ApplicationMessaging)
+            {
+                return;
+            }
             context.PacketContext.ResponsePacketRaw.Add(
                 (byte)context.ResponseHeader.Type
             );

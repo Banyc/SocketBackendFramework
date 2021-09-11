@@ -27,6 +27,10 @@ namespace SocketBackendFramework.Reply.Sample.Controllers
 
         public override void Request(DefaultMiddlewareContext context)
         {
+            if (context.PacketContext.PacketContextType != Relay.Models.PacketContextType.ApplicationMessaging)
+            {
+                return;
+            }
             context.ResponseHeader = new()
             {
                 Type = context.RequestHeader.Type,

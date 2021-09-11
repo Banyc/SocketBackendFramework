@@ -12,39 +12,20 @@ namespace SocketBackendFramework.Relay.Transport.Clients
         public event EventHandler<PacketContext> PacketReceived;
 
         // tell transport mapper to dispose this
-        public event DisconnectedEventHandler TcpClientDisconnected;
+        public event EventHandler<PacketContext> TcpClientDisconnected;
         public event DisconnectedEventHandler ClientTimedOut;
 
-        public int LocalPort
+        public IPEndPoint LocalIPEndPoint
         {
             get
             {
                 switch (this.config.TransportType)
                 {
                     case ExclusiveTransportType.Tcp:
-                        return ((IPEndPoint)this.tcpClient.Socket.LocalEndPoint).Port;
+                        return this.tcpClientLocalIPEndPoint;
                         break;
                     case ExclusiveTransportType.Udp:
-                        return ((IPEndPoint)this.udpClient.Socket.LocalEndPoint).Port;
-                        break;
-                    default:
-                        throw new ArgumentException();
-                        break;
-                }
-            }
-        }
-
-        public IPAddress LocalIpAddress
-        {
-            get
-            {
-                switch (this.config.TransportType)
-                {
-                    case ExclusiveTransportType.Tcp:
-                        return ((IPEndPoint)this.tcpClient.Socket.LocalEndPoint).Address;
-                        break;
-                    case ExclusiveTransportType.Udp:
-                        return ((IPEndPoint)this.udpClient.Socket.LocalEndPoint).Address;
+                        return (IPEndPoint)this.udpClient.Socket.LocalEndPoint;
                         break;
                     default:
                         throw new ArgumentException();
@@ -61,6 +42,9 @@ namespace SocketBackendFramework.Relay.Transport.Clients
 
         private TransportClientConfig config;
 
+        // incase this info cannot be accessed from a disposed socket object
+        private IPEndPoint tcpClientLocalIPEndPoint;
+
         public TransportClient(TransportClientConfig config, uint transportAgentId)
         {
             this.config = config;
@@ -71,7 +55,25 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             {
                 case ExclusiveTransportType.Tcp:
                     this.tcpClient = new(config.RemoteAddress, config.RemotePort);
-                    this.tcpClient.Disconnected += TcpClientDisconnected;
+                    this.tcpClient.Connected += sender => {
+                        TcpClientHandler tcpClient = (TcpClientHandler)sender;
+                        this.tcpClientLocalIPEndPoint = (IPEndPoint)tcpClient.Socket.LocalEndPoint;
+                    };
+                    this.tcpClient.Disconnected += sender =>
+                    {
+                        this.timer.Stop();
+                        TcpClientHandler tcpClient = (TcpClientHandler)sender;
+                        this.TcpClientDisconnected?.Invoke(this, new()
+                        {
+                            PacketContextType = PacketContextType.Disconnecting,
+                            LocalIp = this.tcpClientLocalIPEndPoint.Address,
+                            LocalPort = this.tcpClientLocalIPEndPoint.Port,
+                            RemoteIp = IPAddress.Parse(this.config.RemoteAddress),
+                            RemotePort = this.config.RemotePort,
+                            TransportAgentId = this.TransportAgentId,
+                            TransportType = ExclusiveTransportType.Tcp,
+                        });
+                    };
                     this.tcpClient.Received += OnReceive;
                     this.tcpClient.Connect();
                     break;
@@ -85,6 +87,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             this.timer = new()
             {
                 Interval = config.ClientDisposeTimeout.TotalMilliseconds,
+                AutoReset = false,
             };
             this.timer.Elapsed += (sender, e) => this.ClientTimedOut?.Invoke(this);
             this.timer.Start();
@@ -105,8 +108,26 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             this.timer.Start();
         }
 
+        public void Disconnect()
+        {
+            this.timer.Stop();
+            switch (this.config.TransportType)
+            {
+                case ExclusiveTransportType.Tcp:
+                    this.tcpClient.Disconnect();
+                    break;
+                case ExclusiveTransportType.Udp:
+                    this.udpClient.Disconnect();
+                    break;
+                default:
+                    throw new ArgumentException();
+                    break;
+            }
+        }
+
         public void Dispose()
         {
+            // Console.WriteLine("TransportAgent {} has been disposed.");
             this.timer.Dispose();
             this.tcpClient?.Dispose();
             this.udpClient?.Dispose();
@@ -119,8 +140,8 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             PacketContext context = new()
             {
                 PacketContextType = PacketContextType.ApplicationMessaging,
-                LocalIp = this.LocalIpAddress,
-                LocalPort = this.LocalPort,
+                LocalIp = this.LocalIPEndPoint.Address,
+                LocalPort = this.LocalIPEndPoint.Port,
                 RemoteIp = remoteIPEndPoint.Address,
                 RemotePort = remoteIPEndPoint.Port,
                 TransportAgentId = this.TransportAgentId,

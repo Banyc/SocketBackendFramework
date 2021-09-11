@@ -9,6 +9,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
     public class Listener : ITransportAgent, IDisposable
     {
         public event EventHandler<PacketContext> PacketReceived;
+        public event EventHandler<PacketContext> TcpSessionDisconnected;
 
         private readonly ListenerConfig config;
         private readonly TcpServerHandler tcpServer;
@@ -68,6 +69,23 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
             }
         }
 
+        public void DisconnectTcpSession(PacketContext context)
+        {
+            switch (config.TransportType)
+            {
+                case ExclusiveTransportType.Tcp:
+                    // disconnect a TCP session, not the listener
+                    this.tcpSessions[context.RemotePort].Disconnect();
+                    break;
+                case ExclusiveTransportType.Udp:
+                    throw new ArgumentException("listeners are not allowed to disconnect");
+                    break;
+                default:
+                    throw new ArgumentException();
+                    break;
+            }
+        }
+
         private void OnTcpServerConnected(object sender, TcpSessionHandler session)
         {
             IPEndPoint remoteEndPoint = (IPEndPoint)session.Socket.RemoteEndPoint;
@@ -80,6 +98,16 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
         private void OnTcpSessionDisconnected(object sender)
         {
             TcpSessionHandler session = (TcpSessionHandler)sender;
+            this.TcpSessionDisconnected?.Invoke(this, new()
+            {
+                PacketContextType = PacketContextType.Disconnecting,
+                LocalIp = session.LocalIPEndPoint.Address,
+                LocalPort = this.config.ListeningPort,
+                RemoteIp = session.RemoteIPEndPoint.Address,
+                RemotePort = session.RemoteIPEndPoint.Port,
+                TransportAgentId = this.TransportAgentId,
+                TransportType = ExclusiveTransportType.Tcp,
+            });
             this.tcpSessions.Remove(session.RemoteIPEndPoint.Port);
         }
 

@@ -21,6 +21,7 @@ namespace SocketBackendFramework.Relay.Transport
             {
                 Listener newListener = new(listenerConfig, this.transportAgentIdCounter++);
                 newListener.PacketReceived += OnReceivePacket;
+                newListener.TcpSessionDisconnected += OnReceivePacket;
                 this.listeners[listenerConfig.ListeningPort] = newListener;
             }
         }
@@ -44,13 +45,29 @@ namespace SocketBackendFramework.Relay.Transport
                 case PacketContextType.ApplicationMessaging:
                     SendApplicationMessage(sender, context);
                     break;
+                case PacketContextType.Disconnecting:
+                    ActivelyDisconnect(sender, context);
+                    break;
                 default:
                     throw new ArgumentException();
                     break;
             }
         }
 
-        protected void SendApplicationMessage(object sender, PacketContext context)
+        private void ActivelyDisconnect(object sender, PacketContext context)
+        {
+            if (this.listeners.ContainsKey(context.LocalPort))
+            {
+                this.listeners[context.LocalPort].DisconnectTcpSession(context);
+            }
+            else
+            {
+                // don't dispose client since it will trigger a disposal process on the disconnection event.
+                this.clients[context.LocalPort].Disconnect();
+            }
+        }
+
+        private void SendApplicationMessage(object sender, PacketContext context)
         {
             if (context.ClientConfig == null)
             {
@@ -71,14 +88,18 @@ namespace SocketBackendFramework.Relay.Transport
                 void DisposeClient(object sender)
                 {
                     TransportClient client = (TransportClient)sender;
-                    int localPort = client.LocalPort;
+                    int localPort = client.LocalIPEndPoint.Port;
                     this.clients.Remove(localPort, out _);
                     client.Dispose();
                 }
-                newClient.TcpClientDisconnected += DisposeClient;
-                newClient.ClientTimedOut += DisposeClient;
+                newClient.TcpClientDisconnected += (sender, _) => DisposeClient(sender);
+                newClient.ClientTimedOut += sender => {
+                    TransportClient client = (TransportClient)sender;
+                    client.Disconnect();
+                };
+                newClient.TcpClientDisconnected += OnReceivePacket;
                 newClient.Respond(context);
-                this.clients[newClient.LocalPort] = newClient;
+                this.clients[newClient.LocalIPEndPoint.Port] = newClient;
             }
         }
 

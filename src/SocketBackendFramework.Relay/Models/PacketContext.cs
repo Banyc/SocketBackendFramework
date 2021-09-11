@@ -8,7 +8,7 @@ namespace SocketBackendFramework.Relay.Models
     {
         // ServerStarting,
         // TcpServerAccepting,
-        // Disconnecting,
+        Disconnecting,
         ApplicationMessaging,
     }
 
