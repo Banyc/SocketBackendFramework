@@ -1,3 +1,4 @@
+using SocketBackendFramework.Relay.Models.Transport;
 using SocketBackendFramework.Relay.Pipeline;
 using SocketBackendFramework.Relay.Pipeline.Middlewares.ControllersMapper.Controllers;
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Models;
@@ -34,12 +35,21 @@ namespace SocketBackendFramework.Reply.Sample.Controllers
 
             if (context.RequestHeader.Type == DefaultPacketHeaderType.EchoByClient)
             {
+                int remotePort;
+                if (context.PacketContext.TransportType == ExclusiveTransportType.Udp)
+                {
+                    remotePort = context.PacketContext.RemotePort;
+                }
+                else
+                {
+                    remotePort = 8082;
+                }
                 context.PacketContext.ClientConfig = new()
                 {
                     ClientDisposeTimeout = TimeSpan.FromSeconds(2),
                     RemoteAddress = context.PacketContext.RemoteIp.ToString(),
-                    RemotePort = context.PacketContext.RemotePort,
-                    TransportType = Relay.Models.Transport.ExclusiveTransportType.Udp,
+                    RemotePort = remotePort,
+                    TransportType = context.PacketContext.TransportType,
                 };
             }
 
