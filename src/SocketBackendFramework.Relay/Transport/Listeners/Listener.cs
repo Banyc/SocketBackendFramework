@@ -6,7 +6,7 @@ using SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers;
 
 namespace SocketBackendFramework.Relay.Transport.Listeners
 {
-    public class Listener : ITransportAgent
+    public class Listener : ITransportAgent, IDisposable
     {
         public event EventHandler<PacketContext> PacketReceived;
 
@@ -119,6 +119,16 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
                 RequestPacketRawSize = size,
             };
             this.PacketReceived?.Invoke(this, context);
+        }
+
+        public void Dispose()
+        {
+            foreach (var (_, session) in this.tcpSessions)
+            {
+                session.Dispose();
+            }
+            this.tcpServer?.Dispose();
+            this.udpServer?.Dispose();
         }
     }
 }

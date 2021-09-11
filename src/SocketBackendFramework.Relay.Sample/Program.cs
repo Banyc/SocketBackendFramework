@@ -20,7 +20,7 @@ ConfigRoot configRoot = JsonSerializer.Deserialize<ConfigRoot>(configJsonString,
 
 WorkflowPoolConfig workflowPoolConfig = configRoot.WorkflowPool;
 
-WorkflowPool workflowPool = new(workflowPoolConfig);
+using WorkflowPool workflowPool = new(workflowPoolConfig);
 
 WorkflowConfig workflowConfig = workflowPool.GetWorkflowConfig("default");
 

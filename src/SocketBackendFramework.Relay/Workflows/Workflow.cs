@@ -3,7 +3,7 @@ using SocketBackendFramework.Relay.Pipeline;
 
 namespace SocketBackendFramework.Relay.Workflows
 {
-    public class Workflow
+    public class Workflow : IDisposable
     {
         public string Name { get => this.config.Name; }
 
@@ -29,6 +29,14 @@ namespace SocketBackendFramework.Relay.Workflows
         {
             this.Start();
             await Task.Delay(-1);
+        }
+
+        public void Dispose()
+        {
+            foreach (var pipelineDomain in this.PipelineDomains)
+            {
+                pipelineDomain.Dispose();
+            }
         }
     }
 }

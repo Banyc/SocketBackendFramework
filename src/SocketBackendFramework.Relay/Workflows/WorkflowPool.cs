@@ -3,7 +3,7 @@ using SocketBackendFramework.Relay.Models.Workflows;
 namespace SocketBackendFramework.Relay.Workflows
 {
     // Build workflows
-    public class WorkflowPool
+    public class WorkflowPool : IDisposable
     {
         private readonly WorkflowPoolConfig config;
         private readonly List<Workflow> workflows = new();
@@ -28,6 +28,14 @@ namespace SocketBackendFramework.Relay.Workflows
             foreach (var workflow in this.workflows)
             {
                 workflow.Start();
+            }
+        }
+
+        public void Dispose()
+        {
+            foreach (var workflow in this.workflows)
+            {
+                workflow.Dispose();
             }
         }
     }

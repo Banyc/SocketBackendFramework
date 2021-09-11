@@ -3,7 +3,7 @@ using SocketBackendFramework.Relay.Transport;
 
 namespace SocketBackendFramework.Relay.Pipeline
 {
-    public abstract class PipelineDomain
+    public abstract class PipelineDomain : IDisposable
     {
         protected readonly PipelineDomainConfig config;
 
@@ -11,6 +11,8 @@ namespace SocketBackendFramework.Relay.Pipeline
         {
             this.config = config;
         }
+
+        public abstract void Dispose();
 
         public abstract void Start();
     }
@@ -32,6 +34,11 @@ namespace SocketBackendFramework.Relay.Pipeline
         public override void Start()
         {
             this.transportMapper.Start();
+        }
+
+        public override void Dispose()
+        {
+            this.transportMapper.Dispose();
         }
     }
 }

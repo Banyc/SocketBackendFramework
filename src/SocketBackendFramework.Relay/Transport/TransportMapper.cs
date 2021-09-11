@@ -8,7 +8,7 @@ using SocketBackendFramework.Relay.Transport.Listeners;
 
 namespace SocketBackendFramework.Relay.Transport
 {
-    public abstract class TransportMapper
+    public abstract class TransportMapper : IDisposable
     {
         // local port -> listener
         protected readonly Dictionary<int, Listener> listeners = new();
@@ -79,6 +79,18 @@ namespace SocketBackendFramework.Relay.Transport
                 newClient.ClientTimedOut += DisposeClient;
                 newClient.Respond(context);
                 this.clients[newClient.LocalPort] = newClient;
+            }
+        }
+
+        public void Dispose()
+        {
+            foreach (var (_, listener) in this.listeners)
+            {
+                listener.Dispose();
+            }
+            foreach (var (_, client) in this.clients)
+            {
+                client.Dispose();
             }
         }
     }
