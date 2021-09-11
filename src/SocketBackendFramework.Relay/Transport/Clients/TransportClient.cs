@@ -87,6 +87,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
                 Interval = config.ClientDisposeTimeout.TotalMilliseconds,
             };
             this.timer.Elapsed += (sender, e) => this.ClientTimedOut?.Invoke(this);
+            this.timer.Start();
         }
 
         public void Respond(PacketContext context)
