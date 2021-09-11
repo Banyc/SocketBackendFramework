@@ -1,14 +1,14 @@
 using System.Net;
+using SocketBackendFramework.Relay.Models.Delegates;
 using static SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers.TcpSessionHandler;
 
 namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 {
     public class TcpClientHandler : NetCoreServer.TcpClient
     {
-        public delegate void TcpClientHandlerConnectedEventHandler(object sender);
-        public event TcpClientHandlerConnectedEventHandler Connected;
+        public event SimpleEventHandler Connected;
         public event ReceivedEventHandler Received;
-        public event DisconnectedEventHandler Disconnected;
+        public event SimpleEventHandler Disconnected;
 
         // null if connection has been established
         private Queue<byte[]>? pendingTransmission = new();

@@ -12,27 +12,13 @@ namespace SocketBackendFramework.Relay.Transport.Clients
         public event EventHandler<PacketContext> PacketReceived;
 
         // tell transport mapper to dispose this
-        public event EventHandler<PacketContext> TcpClientDisconnected;
+        public event EventHandler<PacketContext> Disconnected;
+
+        // tell transport mapper to disconnect this
         public event DisconnectedEventHandler ClientTimedOut;
 
-        public IPEndPoint LocalIPEndPoint
-        {
-            get
-            {
-                switch (this.config.TransportType)
-                {
-                    case ExclusiveTransportType.Tcp:
-                        return this.tcpClientLocalIPEndPoint;
-                        break;
-                    case ExclusiveTransportType.Udp:
-                        return (IPEndPoint)this.udpClient.Socket.LocalEndPoint;
-                        break;
-                    default:
-                        throw new ArgumentException();
-                        break;
-                }
-            }
-        }
+        // incase this info cannot be accessed from a disposed socket object
+        public IPEndPoint LocalIPEndPoint { get; private set; }
 
         public uint TransportAgentId { get; }
 
@@ -41,9 +27,6 @@ namespace SocketBackendFramework.Relay.Transport.Clients
         private readonly UdpClientHandler? udpClient;
 
         private TransportClientConfig config;
-
-        // incase this info cannot be accessed from a disposed socket object
-        private IPEndPoint tcpClientLocalIPEndPoint;
 
         public TransportClient(TransportClientConfig config, uint transportAgentId)
         {
@@ -55,31 +38,24 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             {
                 case ExclusiveTransportType.Tcp:
                     this.tcpClient = new(config.RemoteAddress, config.RemotePort);
-                    this.tcpClient.Connected += sender => {
-                        TcpClientHandler tcpClient = (TcpClientHandler)sender;
-                        this.tcpClientLocalIPEndPoint = (IPEndPoint)tcpClient.Socket.LocalEndPoint;
-                    };
-                    this.tcpClient.Disconnected += sender =>
+                    this.tcpClient.Connected += sender =>
                     {
-                        this.timer.Stop();
                         TcpClientHandler tcpClient = (TcpClientHandler)sender;
-                        this.TcpClientDisconnected?.Invoke(this, new()
-                        {
-                            PacketContextType = PacketContextType.Disconnecting,
-                            LocalIp = this.tcpClientLocalIPEndPoint.Address,
-                            LocalPort = this.tcpClientLocalIPEndPoint.Port,
-                            RemoteIp = IPAddress.Parse(this.config.RemoteAddress),
-                            RemotePort = this.config.RemotePort,
-                            TransportAgentId = this.TransportAgentId,
-                            TransportType = ExclusiveTransportType.Tcp,
-                        });
+                        this.LocalIPEndPoint = (IPEndPoint)tcpClient.Socket.LocalEndPoint;
                     };
                     this.tcpClient.Received += OnReceive;
+                    this.tcpClient.Disconnected += OnDisconnected;
                     this.tcpClient.Connect();
                     break;
                 case ExclusiveTransportType.Udp:
                     this.udpClient = new(config.RemoteAddress, config.RemotePort);
+                    this.udpClient.Connected += sender =>
+                    {
+                        UdpClientHandler udpClient = (UdpClientHandler)sender;
+                        this.LocalIPEndPoint = (IPEndPoint)udpClient.Socket.LocalEndPoint;
+                    };
                     this.udpClient.Received += OnReceive;
+                    this.udpClient.Disconnected += OnDisconnected;
                     this.udpClient.Connect();
                     break;
             }
@@ -131,6 +107,21 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             this.timer.Dispose();
             this.tcpClient?.Dispose();
             this.udpClient?.Dispose();
+        }
+
+        private void OnDisconnected(object sender)
+        {
+            this.timer.Stop();
+            this.Disconnected?.Invoke(this, new()
+            {
+                PacketContextType = PacketContextType.Disconnecting,
+                LocalIp = this.LocalIPEndPoint.Address,
+                LocalPort = this.LocalIPEndPoint.Port,
+                RemoteIp = IPAddress.Parse(this.config.RemoteAddress),
+                RemotePort = this.config.RemotePort,
+                TransportAgentId = this.TransportAgentId,
+                TransportType = this.config.TransportType,
+            });
         }
 
         private void OnReceive(object sender, EndPoint remoteEndpoint, byte[] buffer, long offset, long size)

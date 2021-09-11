@@ -95,7 +95,7 @@ namespace SocketBackendFramework.Relay.Transport
                     this.clients.Remove(localPort, out _);
                     client.Dispose();
                 }
-                newClient.TcpClientDisconnected += (sender, context) =>
+                newClient.Disconnected += (sender, context) =>
                 {
                     // dispose client before sending the event to pipeline
                     DisposeClient(sender);
