@@ -14,7 +14,9 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public override PipelineDomain<DefaultMiddlewareContext> Build()
         {
+            // build specialized pipeline
             Pipeline<DefaultMiddlewareContext> pipeline = new();
+            // inject ContextAdaptor to pipeline
             return base.Build(pipeline, new DefaultContextAdaptor());
         }
 

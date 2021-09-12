@@ -31,14 +31,22 @@ The project `SocketBackendFramework.Relay.Sample` gives a simple example of usin
 
 ## Components
 
--   Pipeline := a stack-like data structure containing several middlewares.
--   PipelineDomain := an virtual area including a pipeline and a dedicated transportMapper.
 -   TransportAgent := a wrapped socket handler.
 -   TransportMapper := an object that organizes many transportAgents.
     -   It is only configurable from config.json, not from user code.
 -   PacketContext := an object that carries information and flows between a transportMapper and one of its transportAgents.
 -   MiddlewareContext := an object that carries information and flows within a pipeline.
+    -   Users should implement it.
     -   Usually, a middlewareContext should bring a packetContext.
+-   ContextAdaptor := a convertor between packetContexts and midlewareContexts.
+    -   It acts as an adaptor between a pipeline and a transportMapper.
+        -   TransportMappers only accept packetContexts.
+        -   Pipelines only accept middlewareContexts.
+-   Pipeline := a stack-like data structure containing several middlewares.
+    -   Those middlewares decorate the middlewareContexts that pass through the pipeline.
+    -   When the middlewareContexts go to the bottom of the pipeline, they should contain information ready to use by controllers.
+    -   When the middlewareContexts go to the top of the pipeline, each should contain a complete packetContext ready to use by transportAgents.
+-   PipelineDomain := a virtual area including a pipeline and a dedicated transportMapper.
 -   Workflow := a virtual area that owns a complete and independent back-end server.
     -   No data exchange is allowed between workflows.
 -   WorkflowPool := a virtual area that collects all the running workflows. 

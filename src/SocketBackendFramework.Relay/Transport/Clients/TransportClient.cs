@@ -17,7 +17,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
         // tell transport mapper to disconnect this
         public event SimpleEventHandler ClientTimedOut;
 
-        // incase this info cannot be accessed from a disposed socket object
+        // in case this info cannot be accessed from a disposed socket object
         public IPEndPoint LocalIPEndPoint { get; private set; }
 
         public uint TransportAgentId { get; }
