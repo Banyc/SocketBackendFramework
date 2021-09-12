@@ -1,6 +1,5 @@
 using System.Net;
 using SocketBackendFramework.Relay.Models.Delegates;
-using static SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers.TcpSessionHandler;
 
 namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 {

@@ -1,9 +1,9 @@
 using System.Net;
 using SocketBackendFramework.Relay.Models;
+using SocketBackendFramework.Relay.Models.Delegates;
 using SocketBackendFramework.Relay.Models.Transport;
 using SocketBackendFramework.Relay.Models.Transport.Clients;
 using SocketBackendFramework.Relay.Transport.Clients.SocketHandlers;
-using static SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers.TcpSessionHandler;
 
 namespace SocketBackendFramework.Relay.Transport.Clients
 {
@@ -15,7 +15,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
         public event EventHandler<PacketContext> Disconnected;
 
         // tell transport mapper to disconnect this
-        public event DisconnectedEventHandler ClientTimedOut;
+        public event SimpleEventHandler ClientTimedOut;
 
         // incase this info cannot be accessed from a disposed socket object
         public IPEndPoint LocalIPEndPoint { get; private set; }

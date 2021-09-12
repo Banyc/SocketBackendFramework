@@ -1,5 +1,6 @@
 using System.Net;
 using NetCoreServer;
+using SocketBackendFramework.Relay.Models.Delegates;
 
 namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 {
@@ -8,11 +9,9 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
         public IPEndPoint LocalIPEndPoint { get; private set; }
         public IPEndPoint RemoteIPEndPoint { get; private set; }
 
-        public delegate void ReceivedEventHandler(object sender, EndPoint remoteEndpoint, byte[] buffer, long offset, long size);
         public event ReceivedEventHandler Received;
 
-        public delegate void DisconnectedEventHandler(object sender);
-        public event DisconnectedEventHandler Disconnected;
+        public event SimpleEventHandler Disconnected;
 
         public TcpSessionHandler(TcpServer server) : base(server)
         {

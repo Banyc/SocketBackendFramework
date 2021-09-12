@@ -1,5 +1,3 @@
-using SocketBackendFramework.Relay.Models.Transport.Listeners;
-
 namespace SocketBackendFramework.Relay.Models.Transport.Clients
 {
     public class TransportClientConfig
