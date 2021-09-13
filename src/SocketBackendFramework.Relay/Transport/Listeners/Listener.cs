@@ -32,7 +32,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
             switch (config.TransportType)
             {
                 case ExclusiveTransportType.Tcp:
-                    this.tcpServer = new TcpServerHandler(IPAddress.Any, config.ListeningPort);
+                    this.tcpServer = new TcpServerHandler(IPAddress.Any, config.ListeningPort, config.TcpSessionTimeoutMs);
                     this.tcpServer.Connected += OnTcpServerConnected;
                     break;
                 case ExclusiveTransportType.Udp:
@@ -93,12 +93,18 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
             int remotePort = remoteEndPoint.Port;
             this.tcpSessions[remotePort] = session;
             session.Received += this.OnReceive;
+            session.TcpSessionTimedOut += sender =>
+            {
+                TcpSessionHandler tcpSession = (TcpSessionHandler)sender;
+                tcpSession.Disconnect();
+            };
             session.Disconnected += OnTcpSessionDisconnected;
         }
 
         private void OnTcpSessionDisconnected(object sender)
         {
             TcpSessionHandler session = (TcpSessionHandler)sender;
+            session.Dispose();
             this.TcpSessionDisconnected?.Invoke(this, new()
             {
                 PacketContextType = PacketContextType.Disconnecting,

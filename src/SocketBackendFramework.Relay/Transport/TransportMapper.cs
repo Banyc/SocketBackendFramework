@@ -21,7 +21,7 @@ namespace SocketBackendFramework.Relay.Transport
             {
                 Listener newListener = new(listenerConfig, this.transportAgentIdCounter++);
                 newListener.PacketReceived += OnReceivePacket;
-                newListener.TcpSessionDisconnected += OnReceivePacket;
+                newListener.TcpSessionDisconnected += this.OnReceivePacket;
                 this.listeners[listenerConfig.ListeningPort] = newListener;
             }
         }

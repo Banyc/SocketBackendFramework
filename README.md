@@ -51,3 +51,13 @@ The project `SocketBackendFramework.Relay.Sample` gives a simple example of usin
     -   No data exchange is allowed between workflows.
 -   WorkflowPool := a virtual area that collects all the running workflows. 
 -   Controller := a object that majorly involves business logic.
+
+## Notices
+
+-   Disposal of socket handlers
+    -   When disconnection hits a socket handler, the organizer of many socket handlers should dispose the socket handler.
+        -   The organizer can be `Listener` or `TransportMapper`.
+            -   `Listener` disposes `TcpSessionHandler`.
+            -   `TransportMapper` disposes `TransportClient`.
+    -   A timeout only directly activates a disconnection, not a disposal.
+    -   When an organizer decides to dispose one of the socket handlers, it should do the disposal before telling controllers about the disconnection.

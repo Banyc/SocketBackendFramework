@@ -14,7 +14,8 @@
                                 },
                                 {
                                     "ListeningPort": 8081,
-                                    "TransportType": "Tcp"
+                                    "TransportType": "Tcp",
+                                    "TcpSessionTimeoutMs": 2000  // ms
                                 }
                             ]
                         }

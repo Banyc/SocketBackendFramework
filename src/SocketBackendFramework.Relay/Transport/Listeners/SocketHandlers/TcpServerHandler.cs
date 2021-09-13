@@ -5,8 +5,11 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 {
     public class TcpServerHandler : TcpServer
     {
-        public TcpServerHandler(IPAddress address, int port) : base(address, port)
+        private readonly double tcpSessionTimeoutMs;
+
+        public TcpServerHandler(IPAddress address, int port, double tcpSessionTimeoutMs) : base(address, port)
         {
+            this.tcpSessionTimeoutMs = tcpSessionTimeoutMs;
         }
 
         public event EventHandler<TcpSessionHandler> Connected;
@@ -19,7 +22,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 
         protected override TcpSession CreateSession()
         {
-            TcpSessionHandler tcpSession = new(this);
+            TcpSessionHandler tcpSession = new(this, this.tcpSessionTimeoutMs);
             return tcpSession;
         }
     }
