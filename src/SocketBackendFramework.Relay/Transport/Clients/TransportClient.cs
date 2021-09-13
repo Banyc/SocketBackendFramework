@@ -11,6 +11,9 @@ namespace SocketBackendFramework.Relay.Transport.Clients
     {
         public event EventHandler<PacketContext> PacketReceived;
 
+        // tell transport mapper when this object's local port is available.
+        public event SimpleEventHandler Connected;
+
         // tell transport mapper to dispose this
         public event EventHandler<PacketContext> Disconnected;
 
@@ -42,6 +45,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
                     {
                         TcpClientHandler tcpClient = (TcpClientHandler)sender;
                         this.LocalIPEndPoint = (IPEndPoint)tcpClient.Socket.LocalEndPoint;
+                        this.Connected?.Invoke(this);
                     };
                     this.tcpClient.Received += OnReceive;
                     this.tcpClient.Disconnected += OnDisconnected;
@@ -53,6 +57,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
                     {
                         UdpClientHandler udpClient = (UdpClientHandler)sender;
                         this.LocalIPEndPoint = (IPEndPoint)udpClient.Socket.LocalEndPoint;
+                        this.Connected?.Invoke(this);
                     };
                     this.udpClient.Received += OnReceive;
                     this.udpClient.Disconnected += OnDisconnected;

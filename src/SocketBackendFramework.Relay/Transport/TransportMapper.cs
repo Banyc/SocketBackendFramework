@@ -87,6 +87,10 @@ namespace SocketBackendFramework.Relay.Transport
             {
                 // create a dedicated client to send the packet
                 TransportClient newClient = new(context.ClientConfig, this.transportAgentIdCounter++);
+                newClient.Connected += sender => {
+                    TransportClient transportClient = (TransportClient)sender;
+                    this.clients[transportClient.LocalIPEndPoint.Port] = transportClient;
+                };
                 newClient.PacketReceived += OnReceivePacket;
                 void DisposeClient(object sender)
                 {
@@ -106,7 +110,6 @@ namespace SocketBackendFramework.Relay.Transport
                     client.DisconnectAsync();
                 };
                 newClient.Respond(context);
-                this.clients[newClient.LocalIPEndPoint.Port] = newClient;
             }
         }
 
