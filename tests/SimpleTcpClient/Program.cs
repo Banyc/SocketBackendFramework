@@ -9,11 +9,14 @@ Console.WriteLine($"Your choice: {isGetEchoFromTheSameTransportAgent}");
 
 TcpClient client = new();
 client.Connect("127.0.0.1", 8081);
-int clientLocalPort = ((IPEndPoint)client.Client.LocalEndPoint).Port;
 
-TcpListener listener = new(8082);
+TcpListener listener = null;
 TcpClient listenerSession = null;
-listener.Start();
+if (!isGetEchoFromTheSameTransportAgent)
+{
+    listener = new(8082);
+    listener.Start();
+}
 
 byte[] header = new byte[1];
 if (isGetEchoFromTheSameTransportAgent)
@@ -30,7 +33,11 @@ Memory<byte> receiver = new(new byte[8046]);
 
 while (true)
 {
-    Task<TcpClient> listeningTask = listener.AcceptTcpClientAsync();
+    Task<TcpClient> listeningTask = null;
+    if (!isGetEchoFromTheSameTransportAgent)
+    {
+        listeningTask = listener.AcceptTcpClientAsync();
+    }
 
     Console.Write("Send > ");
     string userMessage = Console.ReadLine();
@@ -49,15 +56,34 @@ while (true)
     {
         listenerSession?.Dispose();
         listenerSession = await listeningTask;
+        // if the transmission to the server failed due to disconnection, the following receiving will block forever.
         stream = listenerSession.GetStream();
     }
 
-    int receivedBytes;
-    do
+    try
     {
-        receivedBytes = await stream.ReadAsync(receiver);
+        int receivedBytes;
+        do
+        {
+            receivedBytes = await stream.ReadAsync(receiver);
+        }
+        while (receivedBytes == 0);
+        var response = receiver.ToArray();
+        Console.WriteLine($"Received \"{Encoding.UTF8.GetString(response, 1, receivedBytes - 1)}\" ({receivedBytes} bytes).");
     }
-    while (receivedBytes == 0);
-    var response = receiver.ToArray();
-    Console.WriteLine($"Received \"{Encoding.UTF8.GetString(response, 1, receivedBytes - 1)}\" ({receivedBytes} bytes).");
+    catch (System.IO.IOException ex)
+    {
+        if (ex.Message == "Unable to read data from the transport connection: Connection reset by peer.")
+        {
+            Console.WriteLine("Transmission failed: Connection reset by peer.");
+            client.Dispose();
+            client = new();
+            client.Connect("127.0.0.1", 8081);
+            Console.WriteLine("Reconnected.");
+        }
+        else
+        {
+            throw;
+        }
+    }
 }
