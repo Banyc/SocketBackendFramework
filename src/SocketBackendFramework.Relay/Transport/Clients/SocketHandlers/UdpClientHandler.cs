@@ -16,7 +16,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
         protected override void OnConnected()
         {
             this.Connected?.Invoke(this);
-            base.ReceiveAsync();  // corespond to official sample
+            base.ReceiveAsync();  // correspond to official sample
         }
 
         protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
