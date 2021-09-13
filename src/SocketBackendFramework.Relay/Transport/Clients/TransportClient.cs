@@ -45,7 +45,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
                     };
                     this.tcpClient.Received += OnReceive;
                     this.tcpClient.Disconnected += OnDisconnected;
-                    this.tcpClient.Connect();
+                    this.tcpClient.ConnectAsync();
                     break;
                 case ExclusiveTransportType.Udp:
                     this.udpClient = new(config.RemoteAddress, config.RemotePort);
@@ -84,13 +84,13 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             this.timer.Start();
         }
 
-        public void Disconnect()
+        public void DisconnectAsync()
         {
             this.timer.Stop();
             switch (this.config.TransportType)
             {
                 case ExclusiveTransportType.Tcp:
-                    this.tcpClient.Disconnect();
+                    this.tcpClient.DisconnectAsync();
                     break;
                 case ExclusiveTransportType.Udp:
                     this.udpClient.Disconnect();

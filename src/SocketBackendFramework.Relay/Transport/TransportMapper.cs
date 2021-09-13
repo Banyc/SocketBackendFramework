@@ -48,7 +48,7 @@ namespace SocketBackendFramework.Relay.Transport
                     SendApplicationMessage(sender, context);
                     break;
                 case PacketContextType.Disconnecting:
-                    ActivelyDisconnect(sender, context);
+                    ActivelyDisconnectAsync(sender, context);
                     break;
                 default:
                     throw new ArgumentException();
@@ -56,7 +56,7 @@ namespace SocketBackendFramework.Relay.Transport
             }
         }
 
-        private void ActivelyDisconnect(object sender, PacketContext context)
+        private void ActivelyDisconnectAsync(object sender, PacketContext context)
         {
             if (this.listeners.ContainsKey(context.LocalPort))
             {
@@ -65,7 +65,7 @@ namespace SocketBackendFramework.Relay.Transport
             else if (this.clients.ContainsKey(context.LocalPort))
             {
                 // don't dispose client since it will trigger a disposal process on the disconnection event.
-                this.clients[context.LocalPort].Disconnect();
+                this.clients[context.LocalPort].DisconnectAsync();
             }
             // else, the tcp session or the client might be disposed and removed from the list.
         }
@@ -103,7 +103,7 @@ namespace SocketBackendFramework.Relay.Transport
                 };
                 newClient.ClientTimedOut += sender => {
                     TransportClient client = (TransportClient)sender;
-                    client.Disconnect();
+                    client.DisconnectAsync();
                 };
                 newClient.Respond(context);
                 this.clients[newClient.LocalIPEndPoint.Port] = newClient;

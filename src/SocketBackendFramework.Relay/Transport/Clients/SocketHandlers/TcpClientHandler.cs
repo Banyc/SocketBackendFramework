@@ -29,7 +29,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
                 // discard queue since the connection has been established
                 this.pendingTransmission = null;
             }
-            base.ReceiveAsync();  // TcpClient will NOT automatically start receiving during connection.
+            // base.ReceiveAsync();  // TcpClient will automatically start receiving during connection which is established by `ConnectAsync`.
         }
 
         protected override void OnReceived(byte[] buffer, long offset, long size)
