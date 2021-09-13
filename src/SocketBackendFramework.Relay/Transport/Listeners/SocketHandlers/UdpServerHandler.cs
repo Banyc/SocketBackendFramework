@@ -15,14 +15,14 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
         protected override void OnStarted()
         {
             base.OnStarted();
-            ReceiveAsync();
+            base.ReceiveAsync();
         }
 
         protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
         {
             base.OnReceived(endpoint, buffer, offset, size);
             this.Received?.Invoke(this, endpoint, buffer, offset, size);
-            ReceiveAsync();
+            base.ReceiveAsync();
         }
     }
 }

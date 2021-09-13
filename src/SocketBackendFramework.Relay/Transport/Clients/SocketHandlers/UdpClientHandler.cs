@@ -11,19 +11,19 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 
         public UdpClientHandler(string address, int port) : base(address, port)
         {
-            ReceiveAsync();
         }
 
         protected override void OnConnected()
         {
             this.Connected?.Invoke(this);
+            base.ReceiveAsync();  // corespond to official sample
         }
 
         protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
         {
             base.OnReceived(endpoint, buffer, offset, size);
             this.Received?.Invoke(this, endpoint, buffer, offset, size);
-            ReceiveAsync();
+            base.ReceiveAsync();
         }
 
         protected override void OnDisconnected()

@@ -29,6 +29,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
                 // discard queue since the connection has been established
                 this.pendingTransmission = null;
             }
+            base.ReceiveAsync();  // TcpClient will NOT automatically start receiving during connection.
         }
 
         protected override void OnReceived(byte[] buffer, long offset, long size)
@@ -36,6 +37,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
             EndPoint remoteEndPoint = this.Socket.RemoteEndPoint;
             base.OnReceived(buffer, offset, size);
             this.Received?.Invoke(this, remoteEndPoint, buffer, offset, size);
+            // base.ReceiveAsync();  // TcpClient will try to receive again after exiting base.OnReceived
         }
 
         protected override void OnDisconnected()
