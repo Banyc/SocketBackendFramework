@@ -1,3 +1,4 @@
+using System;
 using SocketBackendFramework.Relay.Models.Pipeline;
 using SocketBackendFramework.Relay.Transport;
 

@@ -1,3 +1,4 @@
+using System;
 using SocketBackendFramework.Relay.Models;
 
 namespace SocketBackendFramework.Relay.Transport

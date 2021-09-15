@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace SocketBackendFramework.Relay.Pipeline
 {
     public partial class Pipeline<TMiddlewareContext> : IMiddleware<TMiddlewareContext>

@@ -1,3 +1,5 @@
+using System;
+
 namespace SocketBackendFramework.Relay.Models.Transport.Clients
 {
     public class TransportClientConfig

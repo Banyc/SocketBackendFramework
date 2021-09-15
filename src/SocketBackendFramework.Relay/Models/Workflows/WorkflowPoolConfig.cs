@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace SocketBackendFramework.Relay.Models.Workflows
 {
     public class WorkflowPoolConfig

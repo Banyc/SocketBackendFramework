@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Net;
 using SocketBackendFramework.Relay.Models.Transport;
 using SocketBackendFramework.Relay.Models.Transport.Clients;

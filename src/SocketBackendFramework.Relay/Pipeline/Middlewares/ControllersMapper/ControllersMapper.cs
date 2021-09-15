@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using SocketBackendFramework.Relay.Pipeline.Middlewares.ControllersMapper.Controllers;
 
 namespace SocketBackendFramework.Relay.Pipeline.Middlewares.ControllersMapper
