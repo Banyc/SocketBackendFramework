@@ -23,6 +23,7 @@ namespace SocketBackendFramework.Relay.Transport
             {
                 Listener newListener = new(listenerConfig, this.transportAgentIdCounter++);
                 newListener.PacketReceived += OnReceivePacket;
+                newListener.TcpServerConnected += this.OnReceivePacket;
                 newListener.TcpSessionDisconnected += this.OnReceivePacket;
                 this.listeners[listenerConfig.ListeningPort] = newListener;
             }
@@ -46,10 +47,10 @@ namespace SocketBackendFramework.Relay.Transport
         {
             switch (context.PacketContextType)
             {
-                case PacketContextType.ApplicationMessaging:
+                case PacketContextType.ApplicationMessage:
                     SendApplicationMessage(sender, context);
                     break;
-                case PacketContextType.Disconnecting:
+                case PacketContextType.Disconnection:
                     ActivelyDisconnectAsync(sender, context);
                     break;
                 default:

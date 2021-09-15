@@ -4,7 +4,7 @@ using SocketBackendFramework.Relay.Pipeline;
 using SocketBackendFramework.Relay.Pipeline.Middlewares.ControllersMapper.Controllers;
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Models;
 
-namespace SocketBackendFramework.Reply.Sample.Controllers
+namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Controllers
 {
     public class EchoController : Controller<DefaultMiddlewareContext>
     {
@@ -12,8 +12,13 @@ namespace SocketBackendFramework.Reply.Sample.Controllers
         {
             public bool IsThisContextMatchThisController(DefaultMiddlewareContext context)
             {
-                return context.RequestHeader.Type == DefaultPacketHeaderType.Echo ||
-                       context.RequestHeader.Type == DefaultPacketHeaderType.EchoByClient;
+                return
+                    context.PacketContext.PacketContextType ==
+                        Relay.Models.PacketContextType.ApplicationMessage &&
+                    (
+                        context.RequestHeader.Type == DefaultPacketHeaderType.Echo ||
+                        context.RequestHeader.Type == DefaultPacketHeaderType.EchoByClient
+                    );
             }
         }
 
@@ -28,7 +33,7 @@ namespace SocketBackendFramework.Reply.Sample.Controllers
 
         public override void Request(DefaultMiddlewareContext context)
         {
-            if (context.PacketContext.PacketContextType != Relay.Models.PacketContextType.ApplicationMessaging)
+            if (context.PacketContext.PacketContextType != Relay.Models.PacketContextType.ApplicationMessage)
             {
                 return;
             }

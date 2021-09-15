@@ -2,7 +2,7 @@ using System;
 using SocketBackendFramework.Relay.Pipeline.Middlewares.ControllersMapper.Controllers;
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Models;
 
-namespace SocketBackendFramework.Reply.Sample.Controllers
+namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Controllers
 {
     public class NoReplyController : Controller<DefaultMiddlewareContext>
     {
@@ -10,7 +10,10 @@ namespace SocketBackendFramework.Reply.Sample.Controllers
         {
             public bool IsThisContextMatchThisController(DefaultMiddlewareContext context)
             {
-                return context.RequestHeader.Type == DefaultPacketHeaderType.NoReply;
+                return
+                    context.PacketContext.PacketContextType ==
+                        Relay.Models.PacketContextType.ApplicationMessage &&
+                    context.RequestHeader.Type == DefaultPacketHeaderType.NoReply;
             }
         }
 

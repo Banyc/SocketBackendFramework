@@ -12,6 +12,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
     public class Listener : ITransportAgent, IDisposable
     {
         public event EventHandler<PacketContext> PacketReceived;
+        public event EventHandler<PacketContext> TcpServerConnected;
         public event EventHandler<PacketContext> TcpSessionDisconnected;
 
         private readonly ListenerConfig config;
@@ -101,6 +102,16 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
                 tcpSession.Disconnect();
             };
             session.Disconnected += OnTcpSessionDisconnected;
+            this.TcpServerConnected?.Invoke(this, new()
+            {
+                PacketContextType = PacketContextType.TcpServerConnection,
+                LocalIp = session.LocalIPEndPoint.Address,
+                LocalPort = this.config.ListeningPort,
+                RemoteIp = session.RemoteIPEndPoint.Address,
+                RemotePort = session.RemoteIPEndPoint.Port,
+                TransportAgentId = this.TransportAgentId,
+                TransportType = ExclusiveTransportType.Tcp,
+            });
         }
 
         private void OnTcpSessionDisconnected(object sender)
@@ -109,7 +120,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
             session.Dispose();
             this.TcpSessionDisconnected?.Invoke(this, new()
             {
-                PacketContextType = PacketContextType.Disconnecting,
+                PacketContextType = PacketContextType.Disconnection,
                 LocalIp = session.LocalIPEndPoint.Address,
                 LocalPort = this.config.ListeningPort,
                 RemoteIp = session.RemoteIPEndPoint.Address,
@@ -144,7 +155,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
             #endif
             PacketContext context = new()
             {
-                PacketContextType = PacketContextType.ApplicationMessaging,
+                PacketContextType = PacketContextType.ApplicationMessage,
                 LocalIp = localIPEndPoint.Address,
                 LocalPort = this.config.ListeningPort,
                 RemoteIp = remoteIPEndPoint.Address,

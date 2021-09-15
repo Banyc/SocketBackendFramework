@@ -10,7 +10,6 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
         public IPEndPoint RemoteIPEndPoint { get; private set; }
 
         public event ReceivedEventHandler Received;
-
         public event SimpleEventHandler Disconnected;
         public event SimpleEventHandler TcpSessionTimedOut;
 

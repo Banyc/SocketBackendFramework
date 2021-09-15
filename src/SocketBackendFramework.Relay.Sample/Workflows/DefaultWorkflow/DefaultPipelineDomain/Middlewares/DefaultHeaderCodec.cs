@@ -9,7 +9,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
     {
         public void DecodeRequest(DefaultMiddlewareContext context)
         {
-            if (context.PacketContext.PacketContextType != PacketContextType.ApplicationMessaging)
+            if (context.PacketContext.PacketContextType != PacketContextType.ApplicationMessage)
             {
                 return;
             }
@@ -27,7 +27,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public void EncodeResponse(DefaultMiddlewareContext context)
         {
-            if (context.PacketContext.PacketContextType != PacketContextType.ApplicationMessaging)
+            if (context.PacketContext.PacketContextType != PacketContextType.ApplicationMessage)
             {
                 return;
             }

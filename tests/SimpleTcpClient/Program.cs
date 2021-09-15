@@ -4,13 +4,34 @@ using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
+Memory<byte> receiver = new(new byte[8046]);
+
+async Task ReadFromClientAsync(NetworkStream stream)
+{
+    int receivedBytes;
+    do
+    {
+        receivedBytes = await stream.ReadAsync(receiver);
+    }
+    while (receivedBytes == 0);
+    var response = receiver.ToArray();
+    Console.WriteLine($"Received \"{Encoding.UTF8.GetString(response, 1, receivedBytes - 1)}\" ({receivedBytes} bytes).");
+}
+
+async Task<TcpClient> GetConnectedClientAsync()
+{
+    TcpClient client = new();
+    client.Connect("127.0.0.1", 8081);
+    await ReadFromClientAsync(client.GetStream());
+    return client;
+}
+
 bool isGetEchoFromTheSameTransportAgent;
 Console.Write("Get echo from the same transport agent? (Y/n) > ");
 isGetEchoFromTheSameTransportAgent = string.Compare(Console.ReadLine(), "n", ignoreCase: true) != 0;
 Console.WriteLine($"Your choice: {isGetEchoFromTheSameTransportAgent}");
 
-TcpClient client = new();
-client.Connect("127.0.0.1", 8081);
+TcpClient client = await GetConnectedClientAsync();
 
 TcpListener listener = null;
 TcpClient listenerSession = null;
@@ -31,7 +52,6 @@ else
 }
 string hello = "hello";
 
-Memory<byte> receiver = new(new byte[8046]);
 
 while (true)
 {
@@ -64,28 +84,13 @@ while (true)
 
     try
     {
-        int receivedBytes;
-        do
-        {
-            receivedBytes = await stream.ReadAsync(receiver);
-        }
-        while (receivedBytes == 0);
-        var response = receiver.ToArray();
-        Console.WriteLine($"Received \"{Encoding.UTF8.GetString(response, 1, receivedBytes - 1)}\" ({receivedBytes} bytes).");
+        await ReadFromClientAsync(stream);
     }
     catch (System.IO.IOException ex)
     {
-        if (ex.Message == "Unable to read data from the transport connection: Connection reset by peer.")
-        {
-            Console.WriteLine("Transmission failed: Connection reset by peer.");
-            client.Dispose();
-            client = new();
-            client.Connect("127.0.0.1", 8081);
-            Console.WriteLine("Reconnected.");
-        }
-        else
-        {
-            throw;
-        }
+        Console.WriteLine($"Transmission failed: {ex.Message}");
+        client.Dispose();
+        client = await GetConnectedClientAsync();
+        Console.WriteLine("Reconnected.");
     }
 }

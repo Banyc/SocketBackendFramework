@@ -9,21 +9,29 @@ namespace SocketBackendFramework.Relay.Models
     {
         // ServerStarting,
         // TcpServerAccepting,
-        Disconnecting,
-        ApplicationMessaging,
+
+        // not allow to return this type of PacketContext to transport layer.
+        TcpServerConnection,
+
+        // when return PacketContext to transport layer,
+        //   the transport mapper will disconnect the agent with the five-tuple.
+        Disconnection,
+
+        ApplicationMessage,
     }
 
     public class PacketContext
     {
+        // the five tuples
         public IPAddress RemoteIp { get; set; }
         public int RemotePort { get; set; }
-
         public IPAddress LocalIp { get; set; }
         public int LocalPort { get; set; }
-
         public ExclusiveTransportType TransportType { get; set; }
 
+        // ignored when the packetContext return to transport layer.
         public uint TransportAgentId { get; set; }
+
         public PacketContextType PacketContextType { get; set; }
 
         public byte[]? RequestPacketRawBuffer { get; set; }

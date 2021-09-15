@@ -120,7 +120,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             this.timer.Stop();
             this.Disconnected?.Invoke(this, new()
             {
-                PacketContextType = PacketContextType.Disconnecting,
+                PacketContextType = PacketContextType.Disconnection,
                 LocalIp = this.LocalIPEndPoint.Address,
                 LocalPort = this.LocalIPEndPoint.Port,
                 RemoteIp = IPAddress.Parse(this.config.RemoteAddress),
@@ -136,7 +136,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             IPEndPoint remoteIPEndPoint = (IPEndPoint)remoteEndpoint;
             PacketContext context = new()
             {
-                PacketContextType = PacketContextType.ApplicationMessaging,
+                PacketContextType = PacketContextType.ApplicationMessage,
                 LocalIp = this.LocalIPEndPoint.Address,
                 LocalPort = this.LocalIPEndPoint.Port,
                 RemoteIp = remoteIPEndPoint.Address,
