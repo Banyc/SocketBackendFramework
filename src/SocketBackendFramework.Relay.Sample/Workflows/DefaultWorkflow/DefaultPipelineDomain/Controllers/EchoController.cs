@@ -1,5 +1,5 @@
 using System;
-using SocketBackendFramework.Relay.Models.Transport;
+using SocketBackendFramework.Relay.Models.Transport.PacketContexts;
 using SocketBackendFramework.Relay.Pipeline;
 using SocketBackendFramework.Relay.Pipeline.Middlewares.ControllersMapper.Controllers;
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Models;
@@ -13,11 +13,11 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             public bool IsThisContextMatchThisController(DefaultMiddlewareContext context)
             {
                 return
-                    context.PacketContext.PacketContextType ==
-                        Relay.Models.PacketContextType.ApplicationMessage &&
+                    context.Request.PacketContext.EventType ==
+                        DownwardEventType.ApplicationMessageReceived &&
                     (
-                        context.RequestHeader.Type == DefaultPacketHeaderType.Echo ||
-                        context.RequestHeader.Type == DefaultPacketHeaderType.EchoByClient
+                        context.Request.Header.Type == DefaultPacketHeaderType.Echo ||
+                        context.Request.Header.Type == DefaultPacketHeaderType.EchoByClient
                     );
             }
         }
@@ -33,33 +33,32 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public override void Request(DefaultMiddlewareContext context)
         {
-            if (context.PacketContext.PacketContextType != Relay.Models.PacketContextType.ApplicationMessage)
+            context.Response.PacketContext.ActionType = UpwardActionType.SendApplicationMessage;
+            context.Response.PacketContext.FiveTuples = context.Request.PacketContext.FiveTuples;
+            context.Response.Header = new()
             {
-                return;
-            }
-            context.ResponseHeader = new()
-            {
-                Type = context.RequestHeader.Type,
+                Type = context.Request.Header.Type,
             };
-            context.ResponseBody = context.RequestBody;
+            context.Response.Body = context.Request.Body;
 
-            if (context.RequestHeader.Type == DefaultPacketHeaderType.EchoByClient)
+            if (context.Request.Header.Type == DefaultPacketHeaderType.EchoByClient)
             {
                 int remotePort;
-                if (context.PacketContext.TransportType == ExclusiveTransportType.Udp)
+                if (context.Request.PacketContext.FiveTuples.TransportType ==
+                    ExclusiveTransportType.Udp)
                 {
-                    remotePort = context.PacketContext.RemotePort;
+                    remotePort = context.Request.PacketContext.FiveTuples.RemotePort;
                 }
                 else
                 {
                     remotePort = 8082;
                 }
-                context.PacketContext.ClientConfig = new()
+                context.Response.PacketContext.ClientConfig = new()
                 {
                     ClientDisposeTimeout = TimeSpan.FromSeconds(2),
-                    RemoteAddress = context.PacketContext.RemoteIp.ToString(),
+                    RemoteAddress = context.Request.PacketContext.FiveTuples.RemoteIp.ToString(),
                     RemotePort = remotePort,
-                    TransportType = context.PacketContext.TransportType,
+                    TransportType = context.Request.PacketContext.FiveTuples.TransportType,
                 };
             }
 

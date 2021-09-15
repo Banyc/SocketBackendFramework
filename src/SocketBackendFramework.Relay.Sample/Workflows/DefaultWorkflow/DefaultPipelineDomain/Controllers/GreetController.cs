@@ -1,3 +1,4 @@
+using SocketBackendFramework.Relay.Models.Transport.PacketContexts;
 using SocketBackendFramework.Relay.Pipeline;
 using SocketBackendFramework.Relay.Pipeline.Middlewares.ControllersMapper.Controllers;
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Models;
@@ -13,8 +14,8 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             public bool IsThisContextMatchThisController(DefaultMiddlewareContext context)
             {
                 return
-                    context.PacketContext.PacketContextType ==
-                        Relay.Models.PacketContextType.TcpServerConnection;
+                    context.Request.PacketContext.EventType ==
+                        DownwardEventType.TcpServerConnected;
             }
         }
 
@@ -27,12 +28,13 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public override void Request(DefaultMiddlewareContext context)
         {
-            context.PacketContext.PacketContextType = Relay.Models.PacketContextType.ApplicationMessage;
-            context.ResponseHeader = new()
+            context.Response.PacketContext.ActionType = UpwardActionType.SendApplicationMessage;
+            context.Response.PacketContext.FiveTuples = context.Request.PacketContext.FiveTuples;
+            context.Response.Header = new()
             {
                 Type = DefaultPacketHeaderType.NoReply,
             };
-            context.ResponseBody = new()
+            context.Response.Body = new()
             {
                 Message = "The server is ready.",
             };

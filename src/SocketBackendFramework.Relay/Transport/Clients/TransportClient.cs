@@ -4,19 +4,20 @@ using SocketBackendFramework.Relay.Models;
 using SocketBackendFramework.Relay.Models.Delegates;
 using SocketBackendFramework.Relay.Models.Transport;
 using SocketBackendFramework.Relay.Models.Transport.Clients;
+using SocketBackendFramework.Relay.Models.Transport.PacketContexts;
 using SocketBackendFramework.Relay.Transport.Clients.SocketHandlers;
 
 namespace SocketBackendFramework.Relay.Transport.Clients
 {
     public class TransportClient : ITransportAgent, IDisposable
     {
-        public event EventHandler<PacketContext> PacketReceived;
+        public event EventHandler<DownwardPacketContext> PacketReceived;
 
         // tell transport mapper when this object's local port is available.
         public event SimpleEventHandler Connected;
 
         // tell transport mapper to dispose this
-        public event EventHandler<PacketContext> Disconnected;
+        public event EventHandler<DownwardPacketContext> Disconnected;
 
         // tell transport mapper to disconnect this
         public event SimpleEventHandler ClientTimedOut;
@@ -75,7 +76,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             this.timer.Start();
         }
 
-        public void Respond(PacketContext context)
+        public void Respond(UpwardPacketContext context)
         {
             this.timer.Stop();
             switch (this.config.TransportType)
@@ -120,13 +121,16 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             this.timer.Stop();
             this.Disconnected?.Invoke(this, new()
             {
-                PacketContextType = PacketContextType.Disconnection,
-                LocalIp = this.LocalIPEndPoint.Address,
-                LocalPort = this.LocalIPEndPoint.Port,
-                RemoteIp = IPAddress.Parse(this.config.RemoteAddress),
-                RemotePort = this.config.RemotePort,
+                EventType = DownwardEventType.Disconnected,
+                FiveTuples = new()
+                {
+                    LocalIp = this.LocalIPEndPoint.Address,
+                    LocalPort = this.LocalIPEndPoint.Port,
+                    RemoteIp = IPAddress.Parse(this.config.RemoteAddress),
+                    RemotePort = this.config.RemotePort,
+                    TransportType = this.config.TransportType,
+                },
                 TransportAgentId = this.TransportAgentId,
-                TransportType = this.config.TransportType,
             });
         }
 
@@ -134,20 +138,22 @@ namespace SocketBackendFramework.Relay.Transport.Clients
         {
             this.timer.Stop();
             IPEndPoint remoteIPEndPoint = (IPEndPoint)remoteEndpoint;
-            PacketContext context = new()
+            this.PacketReceived?.Invoke(this, new()
             {
-                PacketContextType = PacketContextType.ApplicationMessage,
-                LocalIp = this.LocalIPEndPoint.Address,
-                LocalPort = this.LocalIPEndPoint.Port,
-                RemoteIp = remoteIPEndPoint.Address,
-                RemotePort = remoteIPEndPoint.Port,
+                EventType = DownwardEventType.ApplicationMessageReceived,
+                FiveTuples = new()
+                {
+                    LocalIp = this.LocalIPEndPoint.Address,
+                    LocalPort = this.LocalIPEndPoint.Port,
+                    RemoteIp = remoteIPEndPoint.Address,
+                    RemotePort = remoteIPEndPoint.Port,
+                    TransportType = this.config.TransportType,
+                },
                 TransportAgentId = this.TransportAgentId,
-                TransportType = this.config.TransportType,
-                RequestPacketRawBuffer = buffer,
-                RequestPacketRawOffset = offset,
-                RequestPacketRawSize = size,
-            };
-            this.PacketReceived?.Invoke(this, context);
+                PacketRawBuffer = buffer,
+                PacketRawOffset = offset,
+                PacketRawSize = size,
+            });
             this.timer.Start();
         }
     }

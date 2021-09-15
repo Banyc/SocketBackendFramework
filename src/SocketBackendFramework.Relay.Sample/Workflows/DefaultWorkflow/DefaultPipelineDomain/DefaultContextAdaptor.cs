@@ -1,22 +1,25 @@
 using SocketBackendFramework.Relay.ContextAdaptor;
-using SocketBackendFramework.Relay.Models;
+using SocketBackendFramework.Relay.Models.Transport.PacketContexts;
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Models;
 
 namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain
 {
     public class DefaultContextAdaptor : IContextAdaptor<DefaultMiddlewareContext>
     {
-        public DefaultMiddlewareContext GetMiddlewareContext(PacketContext packetContext)
+        public DefaultMiddlewareContext GetMiddlewareContext(DownwardPacketContext packetContext)
         {
             return new()
             {
-                PacketContext = packetContext,
+                Request = new()
+                {
+                    PacketContext = packetContext,
+                },
             };
         }
 
-        public PacketContext GetPacketContext(DefaultMiddlewareContext middlewareContext)
+        public UpwardPacketContext GetPacketContext(DefaultMiddlewareContext middlewareContext)
         {
-            return middlewareContext.PacketContext;
+            return middlewareContext.Response.PacketContext;
         }
     }
 }

@@ -1,6 +1,7 @@
 using System.Net;
 using NetCoreServer;
 using SocketBackendFramework.Relay.Models.Delegates;
+using SocketBackendFramework.Relay.Models.Transport.PacketContexts;
 
 namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 {
@@ -24,6 +25,18 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
             };
             this.timer.Elapsed += (sender, e) => this.TcpSessionTimedOut?.Invoke(this);
             this.timer.Start();
+        }
+
+        public FiveTuples GetFiveTuples()
+        {
+            return new()
+            {
+                LocalIp = this.LocalIPEndPoint.Address,
+                LocalPort = this.LocalIPEndPoint.Port,
+                RemoteIp = this.RemoteIPEndPoint.Address,
+                RemotePort = this.RemoteIPEndPoint.Port,
+                TransportType = ExclusiveTransportType.Tcp,
+            };
         }
 
         protected override void OnConnected()

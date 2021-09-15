@@ -1,10 +1,10 @@
-using SocketBackendFramework.Relay.Models;
+using SocketBackendFramework.Relay.Models.Transport.PacketContexts;
 
 namespace SocketBackendFramework.Relay.ContextAdaptor
 {
     public interface IContextAdaptor<TMiddlewareContext>
     {
-        TMiddlewareContext GetMiddlewareContext(PacketContext packetContext);
-        PacketContext GetPacketContext(TMiddlewareContext middlewareContext);
+        TMiddlewareContext GetMiddlewareContext(DownwardPacketContext packetContext);
+        UpwardPacketContext GetPacketContext(TMiddlewareContext middlewareContext);
     }
 }

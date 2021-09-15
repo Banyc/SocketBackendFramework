@@ -2,18 +2,17 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
-using SocketBackendFramework.Relay.Models;
-using SocketBackendFramework.Relay.Models.Transport;
 using SocketBackendFramework.Relay.Models.Transport.Listeners;
+using SocketBackendFramework.Relay.Models.Transport.PacketContexts;
 using SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers;
 
 namespace SocketBackendFramework.Relay.Transport.Listeners
 {
     public class Listener : ITransportAgent, IDisposable
     {
-        public event EventHandler<PacketContext> PacketReceived;
-        public event EventHandler<PacketContext> TcpServerConnected;
-        public event EventHandler<PacketContext> TcpSessionDisconnected;
+        public event EventHandler<DownwardPacketContext> PacketReceived;
+        public event EventHandler<DownwardPacketContext> TcpServerConnected;
+        public event EventHandler<DownwardPacketContext> TcpSessionDisconnected;
 
         private readonly ListenerConfig config;
         private readonly TcpServerHandler tcpServer;
@@ -59,27 +58,30 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
             }
         }
 
-        public void Respond(PacketContext context)
+        public void Respond(UpwardPacketContext context)
         {
             switch (config.TransportType)
             {
                 case ExclusiveTransportType.Tcp:
-                    this.tcpSessions[context.RemotePort].Send(context.ResponsePacketRaw.ToArray());
+                    this.tcpSessions[context.FiveTuples.RemotePort]
+                        .Send(context.ResponsePacketRaw.ToArray());
                     break;
                 case ExclusiveTransportType.Udp:
-                    this.udpServer.Send(new IPEndPoint(context.RemoteIp, context.RemotePort),
-                                        context.ResponsePacketRaw.ToArray());
+                    this.udpServer.Send(new IPEndPoint(
+                        context.FiveTuples.RemoteIp,
+                        context.FiveTuples.RemotePort),
+                        context.ResponsePacketRaw.ToArray());
                     break;
             }
         }
 
-        public void DisconnectTcpSession(PacketContext context)
+        public void DisconnectTcpSession(UpwardPacketContext context)
         {
             switch (config.TransportType)
             {
                 case ExclusiveTransportType.Tcp:
                     // disconnect a TCP session, not the listener
-                    this.tcpSessions[context.RemotePort].Disconnect();
+                    this.tcpSessions[context.FiveTuples.RemotePort].Disconnect();
                     break;
                 case ExclusiveTransportType.Udp:
                     throw new ArgumentException("listeners are not allowed to disconnect");
@@ -104,13 +106,9 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
             session.Disconnected += OnTcpSessionDisconnected;
             this.TcpServerConnected?.Invoke(this, new()
             {
-                PacketContextType = PacketContextType.TcpServerConnection,
-                LocalIp = session.LocalIPEndPoint.Address,
-                LocalPort = this.config.ListeningPort,
-                RemoteIp = session.RemoteIPEndPoint.Address,
-                RemotePort = session.RemoteIPEndPoint.Port,
+                EventType = DownwardEventType.TcpServerConnected,
+                FiveTuples = session.GetFiveTuples(),
                 TransportAgentId = this.TransportAgentId,
-                TransportType = ExclusiveTransportType.Tcp,
             });
         }
 
@@ -120,13 +118,9 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
             session.Dispose();
             this.TcpSessionDisconnected?.Invoke(this, new()
             {
-                PacketContextType = PacketContextType.Disconnection,
-                LocalIp = session.LocalIPEndPoint.Address,
-                LocalPort = this.config.ListeningPort,
-                RemoteIp = session.RemoteIPEndPoint.Address,
-                RemotePort = session.RemoteIPEndPoint.Port,
+                EventType = DownwardEventType.Disconnected,
+                FiveTuples = session.GetFiveTuples(),
                 TransportAgentId = this.TransportAgentId,
-                TransportType = ExclusiveTransportType.Tcp,
             });
             this.tcpSessions.Remove(session.RemoteIPEndPoint.Port, out _);
         }
@@ -153,18 +147,21 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
                 throw new Exception();
             }
             #endif
-            PacketContext context = new()
+            DownwardPacketContext context = new()
             {
-                PacketContextType = PacketContextType.ApplicationMessage,
-                LocalIp = localIPEndPoint.Address,
-                LocalPort = this.config.ListeningPort,
-                RemoteIp = remoteIPEndPoint.Address,
-                RemotePort = remoteIPEndPoint.Port,
+                EventType = DownwardEventType.ApplicationMessageReceived,
+                FiveTuples = new()
+                {
+                    LocalIp = localIPEndPoint.Address,
+                    LocalPort = this.config.ListeningPort,
+                    RemoteIp = remoteIPEndPoint.Address,
+                    RemotePort = remoteIPEndPoint.Port,
+                    TransportType = this.config.TransportType,
+                },
                 TransportAgentId = this.TransportAgentId,
-                TransportType = this.config.TransportType,
-                RequestPacketRawBuffer = buffer,
-                RequestPacketRawOffset = offset,
-                RequestPacketRawSize = size,
+                PacketRawBuffer = buffer,
+                PacketRawOffset = offset,
+                PacketRawSize = size,
             };
             this.PacketReceived?.Invoke(this, context);
         }

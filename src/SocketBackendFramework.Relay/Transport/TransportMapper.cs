@@ -2,8 +2,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using SocketBackendFramework.Relay.ContextAdaptor;
-using SocketBackendFramework.Relay.Models;
 using SocketBackendFramework.Relay.Models.Transport;
+using SocketBackendFramework.Relay.Models.Transport.PacketContexts;
 using SocketBackendFramework.Relay.Pipeline;
 using SocketBackendFramework.Relay.Transport.Clients;
 using SocketBackendFramework.Relay.Transport.Listeners;
@@ -22,9 +22,9 @@ namespace SocketBackendFramework.Relay.Transport
             foreach (var listenerConfig in config.Listeners)
             {
                 Listener newListener = new(listenerConfig, this.transportAgentIdCounter++);
-                newListener.PacketReceived += OnReceivePacket;
-                newListener.TcpServerConnected += this.OnReceivePacket;
-                newListener.TcpSessionDisconnected += this.OnReceivePacket;
+                newListener.PacketReceived += OnDownwardEvent;
+                newListener.TcpServerConnected += this.OnDownwardEvent;
+                newListener.TcpSessionDisconnected += this.OnDownwardEvent;
                 this.listeners[listenerConfig.ListeningPort] = newListener;
             }
         }
@@ -40,17 +40,17 @@ namespace SocketBackendFramework.Relay.Transport
         }
 
         // pass packet context down to pipeline
-        protected abstract void OnReceivePacket(object sender, PacketContext context);
+        protected abstract void OnDownwardEvent(object sender, DownwardPacketContext context);
 
         // receive packet context from pipeline
-        protected void OnSendingPacket(object sender, PacketContext context)
+        protected void OnSendingPacket(object sender, UpwardPacketContext context)
         {
-            switch (context.PacketContextType)
+            switch (context.ActionType)
             {
-                case PacketContextType.ApplicationMessage:
+                case UpwardActionType.SendApplicationMessage:
                     SendApplicationMessage(sender, context);
                     break;
-                case PacketContextType.Disconnection:
+                case UpwardActionType.Disconnect:
                     ActivelyDisconnectAsync(sender, context);
                     break;
                 default:
@@ -59,31 +59,31 @@ namespace SocketBackendFramework.Relay.Transport
             }
         }
 
-        private void ActivelyDisconnectAsync(object sender, PacketContext context)
+        private void ActivelyDisconnectAsync(object sender, UpwardPacketContext context)
         {
-            if (this.listeners.ContainsKey(context.LocalPort))
+            if (this.listeners.ContainsKey(context.FiveTuples.LocalPort))
             {
-                this.listeners[context.LocalPort].DisconnectTcpSession(context);
+                this.listeners[context.FiveTuples.LocalPort].DisconnectTcpSession(context);
             }
-            else if (this.clients.ContainsKey(context.LocalPort))
+            else if (this.clients.ContainsKey(context.FiveTuples.LocalPort))
             {
                 // don't dispose client since it will trigger a disposal process on the disconnection event.
-                this.clients[context.LocalPort].DisconnectAsync();
+                this.clients[context.FiveTuples.LocalPort].DisconnectAsync();
             }
             // else, the tcp session or the client might be disposed and removed from the list.
         }
 
-        private void SendApplicationMessage(object sender, PacketContext context)
+        private void SendApplicationMessage(object sender, UpwardPacketContext context)
         {
             if (context.ClientConfig == null)
             {
-                if (this.listeners.ContainsKey(context.LocalPort))
+                if (this.listeners.ContainsKey(context.FiveTuples.LocalPort))
                 {
-                    this.listeners[context.LocalPort].Respond(context);
+                    this.listeners[context.FiveTuples.LocalPort].Respond(context);
                 }
                 else
                 {
-                    this.clients[context.LocalPort].Respond(context);
+                    this.clients[context.FiveTuples.LocalPort].Respond(context);
                 }
             }
             else
@@ -94,7 +94,7 @@ namespace SocketBackendFramework.Relay.Transport
                     TransportClient transportClient = (TransportClient)sender;
                     this.clients[transportClient.LocalIPEndPoint.Port] = transportClient;
                 };
-                newClient.PacketReceived += OnReceivePacket;
+                newClient.PacketReceived += OnDownwardEvent;
                 void DisposeClient(object sender)
                 {
                     TransportClient client = (TransportClient)sender;
@@ -106,7 +106,7 @@ namespace SocketBackendFramework.Relay.Transport
                 {
                     // dispose client before sending the event to pipeline
                     DisposeClient(sender);
-                    this.OnReceivePacket(sender, context);
+                    this.OnDownwardEvent(sender, context);
                 };
                 newClient.ClientTimedOut += sender => {
                     TransportClient client = (TransportClient)sender;
@@ -142,7 +142,7 @@ namespace SocketBackendFramework.Relay.Transport
             this.contextAdaptor = contextAdaptor;
         }
 
-        protected override void OnReceivePacket(object sender, PacketContext context)
+        protected override void OnDownwardEvent(object sender, DownwardPacketContext context)
         {
             TMiddlewareContext middlewareContext = this.contextAdaptor.GetMiddlewareContext(context);
             this.pipeline.GoDown(middlewareContext);
@@ -150,7 +150,7 @@ namespace SocketBackendFramework.Relay.Transport
 
         private void OnSendingPacket(object sender, TMiddlewareContext middlewareContext)
         {
-            PacketContext context = this.contextAdaptor.GetPacketContext(middlewareContext);
+            UpwardPacketContext context = this.contextAdaptor.GetPacketContext(middlewareContext);
             base.OnSendingPacket(sender, context);
         }
     }

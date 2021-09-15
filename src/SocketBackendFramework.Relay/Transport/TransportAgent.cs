@@ -1,13 +1,13 @@
 using System;
-using SocketBackendFramework.Relay.Models;
+using SocketBackendFramework.Relay.Models.Transport.PacketContexts;
 
 namespace SocketBackendFramework.Relay.Transport
 {
     public interface ITransportAgent
     {
-        event EventHandler<PacketContext> PacketReceived;
+        event EventHandler<DownwardPacketContext> PacketReceived;
         uint TransportAgentId { get; }
 
-        void Respond(PacketContext context);
+        void Respond(UpwardPacketContext context);
     }
 }

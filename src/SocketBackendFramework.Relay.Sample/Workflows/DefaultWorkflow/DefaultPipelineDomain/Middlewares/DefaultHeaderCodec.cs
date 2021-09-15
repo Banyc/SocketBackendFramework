@@ -1,5 +1,5 @@
 using System.Text;
-using SocketBackendFramework.Relay.Models;
+using SocketBackendFramework.Relay.Models.Transport.PacketContexts;
 using SocketBackendFramework.Relay.Pipeline.Middlewares.Codec;
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Models;
 
@@ -9,33 +9,35 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
     {
         public void DecodeRequest(DefaultMiddlewareContext context)
         {
-            if (context.PacketContext.PacketContextType != PacketContextType.ApplicationMessage)
+            if (context.Request.PacketContext.EventType !=
+                DownwardEventType.ApplicationMessageReceived)
             {
                 return;
             }
             int typeFieldOffset = 0;
             int typeFieldSize = 1;
-            int typeField = context.PacketContext.RequestPacketRawBuffer[typeFieldOffset];
-            context.RequestHeader.Type = (DefaultPacketHeaderType)typeField;
+            int typeField = context.Request.PacketContext.PacketRawBuffer[typeFieldOffset];
+            context.Request.Header.Type = (DefaultPacketHeaderType)typeField;
 
-            int bodyOffset = (int)context.PacketContext.RequestPacketRawOffset + typeFieldSize;
-            int bodySize = (int)context.PacketContext.RequestPacketRawSize - typeFieldSize;
-            context.RequestBody.Message = Encoding.UTF8.GetString(context.PacketContext.RequestPacketRawBuffer,
-                                                          bodyOffset,
-                                                          bodySize);
+            int bodyOffset = (int)context.Request.PacketContext.PacketRawOffset + typeFieldSize;
+            int bodySize = (int)context.Request.PacketContext.PacketRawSize - typeFieldSize;
+            context.Request.Body.Message = Encoding.UTF8.GetString(
+                context.Request.PacketContext.PacketRawBuffer,
+                bodyOffset,
+                bodySize);
         }
 
         public void EncodeResponse(DefaultMiddlewareContext context)
         {
-            if (context.PacketContext.PacketContextType != PacketContextType.ApplicationMessage)
+            if (context.Response.PacketContext.ActionType != UpwardActionType.SendApplicationMessage)
             {
                 return;
             }
-            context.PacketContext.ResponsePacketRaw.Add(
-                (byte)context.ResponseHeader.Type
+            context.Response.PacketContext.ResponsePacketRaw.Add(
+                (byte)context.Response.Header.Type
             );
-            context.PacketContext.ResponsePacketRaw.AddRange(
-                Encoding.UTF8.GetBytes(context.ResponseBody.Message)
+            context.Response.PacketContext.ResponsePacketRaw.AddRange(
+                Encoding.UTF8.GetBytes(context.Response.Body.Message)
             );
         }
     }
