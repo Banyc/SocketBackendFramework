@@ -124,10 +124,9 @@ namespace SocketBackendFramework.Relay.Transport.Clients
                 EventType = DownwardEventType.Disconnected,
                 FiveTuples = new()
                 {
-                    LocalIp = this.LocalIPEndPoint.Address,
-                    LocalPort = this.LocalIPEndPoint.Port,
-                    RemoteIp = IPAddress.Parse(this.config.RemoteAddress),
-                    RemotePort = this.config.RemotePort,
+                    Local = this.LocalIPEndPoint,
+                    Remote = new(IPAddress.Parse(this.config.RemoteAddress),
+                                 this.config.RemotePort),
                     TransportType = this.config.TransportType,
                 },
                 TransportAgentId = this.TransportAgentId,
@@ -143,10 +142,8 @@ namespace SocketBackendFramework.Relay.Transport.Clients
                 EventType = DownwardEventType.ApplicationMessageReceived,
                 FiveTuples = new()
                 {
-                    LocalIp = this.LocalIPEndPoint.Address,
-                    LocalPort = this.LocalIPEndPoint.Port,
-                    RemoteIp = remoteIPEndPoint.Address,
-                    RemotePort = remoteIPEndPoint.Port,
+                    Local = this.LocalIPEndPoint,
+                    Remote = remoteIPEndPoint,
                     TransportType = this.config.TransportType,
                 },
                 TransportAgentId = this.TransportAgentId,

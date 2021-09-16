@@ -31,10 +31,8 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
         {
             return new()
             {
-                LocalIp = this.LocalIPEndPoint.Address,
-                LocalPort = this.LocalIPEndPoint.Port,
-                RemoteIp = this.RemoteIPEndPoint.Address,
-                RemotePort = this.RemoteIPEndPoint.Port,
+                Local = this.LocalIPEndPoint,
+                Remote = this.RemoteIPEndPoint,
                 TransportType = ExclusiveTransportType.Tcp,
             };
         }

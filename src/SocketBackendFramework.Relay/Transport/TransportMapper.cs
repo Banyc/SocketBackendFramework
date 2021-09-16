@@ -61,14 +61,14 @@ namespace SocketBackendFramework.Relay.Transport
 
         private void ActivelyDisconnectAsync(object sender, UpwardPacketContext context)
         {
-            if (this.listeners.ContainsKey(context.FiveTuples.LocalPort))
+            if (this.listeners.ContainsKey(context.FiveTuples.Local.Port))
             {
-                this.listeners[context.FiveTuples.LocalPort].DisconnectTcpSession(context);
+                this.listeners[context.FiveTuples.Local.Port].DisconnectTcpSession(context);
             }
-            else if (this.clients.ContainsKey(context.FiveTuples.LocalPort))
+            else if (this.clients.ContainsKey(context.FiveTuples.Local.Port))
             {
                 // don't dispose client since it will trigger a disposal process on the disconnection event.
-                this.clients[context.FiveTuples.LocalPort].DisconnectAsync();
+                this.clients[context.FiveTuples.Local.Port].DisconnectAsync();
             }
             // else, the tcp session or the client might be disposed and removed from the list.
         }
@@ -77,13 +77,13 @@ namespace SocketBackendFramework.Relay.Transport
         {
             if (context.ClientConfig == null)
             {
-                if (this.listeners.ContainsKey(context.FiveTuples.LocalPort))
+                if (this.listeners.ContainsKey(context.FiveTuples.Local.Port))
                 {
-                    this.listeners[context.FiveTuples.LocalPort].Respond(context);
+                    this.listeners[context.FiveTuples.Local.Port].Respond(context);
                 }
                 else
                 {
-                    this.clients[context.FiveTuples.LocalPort].Respond(context);
+                    this.clients[context.FiveTuples.Local.Port].Respond(context);
                 }
             }
             else

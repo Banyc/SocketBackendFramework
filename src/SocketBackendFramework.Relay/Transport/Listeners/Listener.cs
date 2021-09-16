@@ -63,14 +63,12 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
             switch (config.TransportType)
             {
                 case ExclusiveTransportType.Tcp:
-                    this.tcpSessions[context.FiveTuples.RemotePort]
+                    this.tcpSessions[context.FiveTuples.Remote.Port]
                         .Send(context.ResponsePacketRaw.ToArray());
                     break;
                 case ExclusiveTransportType.Udp:
-                    this.udpServer.Send(new IPEndPoint(
-                        context.FiveTuples.RemoteIp,
-                        context.FiveTuples.RemotePort),
-                        context.ResponsePacketRaw.ToArray());
+                    this.udpServer.Send(context.FiveTuples.Remote,
+                                        context.ResponsePacketRaw.ToArray());
                     break;
             }
         }
@@ -81,7 +79,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
             {
                 case ExclusiveTransportType.Tcp:
                     // disconnect a TCP session, not the listener
-                    this.tcpSessions[context.FiveTuples.RemotePort].Disconnect();
+                    this.tcpSessions[context.FiveTuples.Remote.Port].Disconnect();
                     break;
                 case ExclusiveTransportType.Udp:
                     throw new ArgumentException("listeners are not allowed to disconnect");
@@ -152,10 +150,8 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
                 EventType = DownwardEventType.ApplicationMessageReceived,
                 FiveTuples = new()
                 {
-                    LocalIp = localIPEndPoint.Address,
-                    LocalPort = this.config.ListeningPort,
-                    RemoteIp = remoteIPEndPoint.Address,
-                    RemotePort = remoteIPEndPoint.Port,
+                    Local = localIPEndPoint,
+                    Remote = remoteIPEndPoint,
                     TransportType = this.config.TransportType,
                 },
                 TransportAgentId = this.TransportAgentId,

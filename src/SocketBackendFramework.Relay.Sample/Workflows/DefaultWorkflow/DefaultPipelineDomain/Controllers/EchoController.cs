@@ -47,7 +47,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 if (context.Request.PacketContext.FiveTuples.TransportType ==
                     ExclusiveTransportType.Udp)
                 {
-                    remotePort = context.Request.PacketContext.FiveTuples.RemotePort;
+                    remotePort = context.Request.PacketContext.FiveTuples.Remote.Port;
                 }
                 else
                 {
@@ -56,7 +56,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 context.Response.PacketContext.ClientConfig = new()
                 {
                     ClientDisposeTimeout = TimeSpan.FromSeconds(2),
-                    RemoteAddress = context.Request.PacketContext.FiveTuples.RemoteIp.ToString(),
+                    RemoteAddress = context.Request.PacketContext.FiveTuples.Remote.Address.ToString(),
                     RemotePort = remotePort,
                     TransportType = context.Request.PacketContext.FiveTuples.TransportType,
                 };
