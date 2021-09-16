@@ -9,21 +9,16 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
     {
         private readonly Pipeline<DefaultMiddlewareContext> defaultPipeline;
 
-        public class GreetControllerHeaderRoute : IHeaderRoute<DefaultMiddlewareContext>
-        {
-            public bool IsThisContextMatchThisController(DefaultMiddlewareContext context)
-            {
-                return
-                    context.Request.PacketContext.EventType ==
-                        DownwardEventType.TcpServerConnected;
-            }
-        }
-
-        public override IHeaderRoute<DefaultMiddlewareContext> HeaderRoute => new GreetControllerHeaderRoute();
-
         public GreetController(Pipeline<DefaultMiddlewareContext> defaultPipeline)
         {
             this.defaultPipeline = defaultPipeline;
+        }
+
+        public override bool IsControllerMatch(DefaultMiddlewareContext context)
+        {
+            return
+                context.Request.PacketContext.EventType ==
+                    DownwardEventType.TcpServerConnected;
         }
 
         public override void Request(DefaultMiddlewareContext context)

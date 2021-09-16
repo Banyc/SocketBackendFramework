@@ -2,7 +2,7 @@ namespace SocketBackendFramework.Relay.Pipeline.Middlewares.ControllersMapper.Co
 {
     public abstract class Controller<TMiddlewareContext>
     {
-        public abstract IHeaderRoute<TMiddlewareContext> HeaderRoute { get; }
+        public abstract bool IsControllerMatch(TMiddlewareContext context);
         // TODO: action route
         public abstract void Request(TMiddlewareContext context);
     }

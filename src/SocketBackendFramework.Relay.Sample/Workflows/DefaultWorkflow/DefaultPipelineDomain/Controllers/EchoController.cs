@@ -8,20 +8,6 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 {
     public class EchoController : Controller<DefaultMiddlewareContext>
     {
-        public class EchoControllerHeaderRoute : IHeaderRoute<DefaultMiddlewareContext>
-        {
-            public bool IsThisContextMatchThisController(DefaultMiddlewareContext context)
-            {
-                return
-                    context.Request.PacketContext.EventType ==
-                        DownwardEventType.ApplicationMessageReceived &&
-                    (
-                        context.Request.Header.Type == DefaultPacketHeaderType.Echo ||
-                        context.Request.Header.Type == DefaultPacketHeaderType.EchoByClient
-                    );
-            }
-        }
-
         private readonly Pipeline<DefaultMiddlewareContext> defaultPipeline;
 
         public EchoController(Pipeline<DefaultMiddlewareContext> defaultPipeline)
@@ -29,7 +15,16 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             this.defaultPipeline = defaultPipeline;
         }
 
-        public override IHeaderRoute<DefaultMiddlewareContext> HeaderRoute => new EchoControllerHeaderRoute();
+        public override bool IsControllerMatch(DefaultMiddlewareContext context)
+        {
+            return
+                context.Request.PacketContext.EventType ==
+                    DownwardEventType.ApplicationMessageReceived &&
+                (
+                    context.Request.Header.Type == DefaultPacketHeaderType.Echo ||
+                    context.Request.Header.Type == DefaultPacketHeaderType.EchoByClient
+                );
+        }
 
         public override void Request(DefaultMiddlewareContext context)
         {

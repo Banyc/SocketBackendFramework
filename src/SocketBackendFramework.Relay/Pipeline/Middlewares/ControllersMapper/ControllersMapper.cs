@@ -16,7 +16,7 @@ namespace SocketBackendFramework.Relay.Pipeline.Middlewares.ControllersMapper
         {
             foreach (Controller<TMiddlewareContext> controller in this.controllers)
             {
-                if (controller.HeaderRoute.IsThisContextMatchThisController(context))
+                if (controller.IsControllerMatch(context))
                 {
                     controller.Request(context);
                     break;

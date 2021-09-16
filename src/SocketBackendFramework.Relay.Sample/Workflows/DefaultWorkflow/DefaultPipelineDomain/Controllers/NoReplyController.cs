@@ -7,18 +7,13 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 {
     public class NoReplyController : Controller<DefaultMiddlewareContext>
     {
-        public class NoReplyControllerHeaderRoute : IHeaderRoute<DefaultMiddlewareContext>
+        public override bool IsControllerMatch(DefaultMiddlewareContext context)
         {
-            public bool IsThisContextMatchThisController(DefaultMiddlewareContext context)
-            {
-                return
-                    context.Request.PacketContext.EventType ==
-                        DownwardEventType.ApplicationMessageReceived &&
-                    context.Request.Header.Type == DefaultPacketHeaderType.NoReply;
-            }
+            return
+                context.Request.PacketContext.EventType ==
+                    DownwardEventType.ApplicationMessageReceived &&
+                context.Request.Header.Type == DefaultPacketHeaderType.NoReply;
         }
-
-        public override IHeaderRoute<DefaultMiddlewareContext> HeaderRoute => new NoReplyControllerHeaderRoute();
 
         public override void Request(DefaultMiddlewareContext context)
         {
