@@ -82,10 +82,10 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             switch (this.config.TransportType)
             {
                 case ExclusiveTransportType.Tcp:
-                    this.tcpClient.SendAfterConnected(context.ResponsePacketRaw.ToArray());
+                    this.tcpClient.SendAfterConnected(context.PacketRawBuffer, context.PacketRawOffset, context.PacketRawSize);
                     break;
                 case ExclusiveTransportType.Udp:
-                    this.udpClient.Send(context.ResponsePacketRaw.ToArray());
+                    this.udpClient.Send(context.PacketRawBuffer, context.PacketRawOffset, context.PacketRawSize);
                     break;
             }
             this.timer.Start();

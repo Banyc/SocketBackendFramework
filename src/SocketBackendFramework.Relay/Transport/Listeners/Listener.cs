@@ -64,11 +64,11 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
             {
                 case ExclusiveTransportType.Tcp:
                     this.tcpSessions[context.FiveTuples.Remote.Port]
-                        .Send(context.ResponsePacketRaw.ToArray());
+                        .Send(context.PacketRawBuffer, context.PacketRawOffset, context.PacketRawSize);
                     break;
                 case ExclusiveTransportType.Udp:
                     this.udpServer.Send(context.FiveTuples.Remote,
-                                        context.ResponsePacketRaw.ToArray());
+                                        context.PacketRawBuffer, context.PacketRawOffset, context.PacketRawSize);
                     break;
             }
         }

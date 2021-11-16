@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using SocketBackendFramework.Relay.Models.Transport.PacketContexts;
 using SocketBackendFramework.Relay.Pipeline.Middlewares.Codec;
@@ -33,12 +34,16 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             {
                 return;
             }
-            context.Response.PacketContext.ResponsePacketRaw.Add(
-                (byte)context.Response.Header.Type
-            );
-            context.Response.PacketContext.ResponsePacketRaw.AddRange(
-                Encoding.UTF8.GetBytes(context.Response.Body.Message)
-            );
+            context.Response.PacketContext.PacketRawOffset = 0;
+            int typeFieldOffset = 0;
+            int typeFieldSize = 1;
+            context.Response.PacketContext.PacketRawSize = typeFieldSize + context.Response.Body.Message.Length;
+            context.Response.PacketContext.PacketRawBuffer = new byte[context.Response.PacketContext.PacketRawSize];
+            context.Response.PacketContext.PacketRawBuffer[typeFieldOffset] =
+                (byte)context.Response.Header.Type;
+            Span<byte> bodyBuffer = context.Response.PacketContext.PacketRawBuffer.AsSpan(
+                typeFieldOffset + typeFieldSize);
+            Encoding.UTF8.GetBytes(context.Response.Body.Message, bodyBuffer);
         }
     }
 }

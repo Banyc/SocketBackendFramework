@@ -47,14 +47,14 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
             this.Disconnected?.Invoke(this);
         }
 
-        public void SendAfterConnected(byte[] buffer)
+        public void SendAfterConnected(byte[] buffer, long offset, long size)
         {
             if (this.IsConnected)
             {
                 // send directly if no pendingTransmission
                 if (this.pendingTransmission == null)
                 {
-                    base.Send(buffer);
+                    base.Send(buffer, offset, size);
                 }
                 else
                 {
