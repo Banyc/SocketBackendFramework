@@ -28,8 +28,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
         public uint TransportAgentId { get; }
 
         private readonly System.Timers.Timer timer;
-        private readonly TcpClientHandler? tcpClient;
-        private readonly UdpClientHandler? udpClient;
+        private readonly IClientHandler client;
 
         private TransportClientConfig config;
 
@@ -39,33 +38,16 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             this.TransportAgentId = transportAgentId;
 
             // build client
-            switch (config.TransportType)
+            this.client = new(config.RemoteAddress, config.RemotePort);
+            this.client.Connected += sender =>
             {
-                case ExclusiveTransportType.Tcp:
-                    this.tcpClient = new(config.RemoteAddress, config.RemotePort);
-                    this.tcpClient.Connected += sender =>
-                    {
-                        TcpClientHandler tcpClient = (TcpClientHandler)sender;
-                        this.LocalIPEndPoint = (IPEndPoint)tcpClient.Socket.LocalEndPoint;
-                        this.Connected?.Invoke(this);
-                    };
-                    this.tcpClient.Received += OnReceive;
-                    this.tcpClient.Disconnected += OnDisconnected;
-                    this.tcpClient.ConnectAsync();
-                    break;
-                case ExclusiveTransportType.Udp:
-                    this.udpClient = new(config.RemoteAddress, config.RemotePort);
-                    this.udpClient.Connected += sender =>
-                    {
-                        UdpClientHandler udpClient = (UdpClientHandler)sender;
-                        this.LocalIPEndPoint = (IPEndPoint)udpClient.Socket.LocalEndPoint;
-                        this.Connected?.Invoke(this);
-                    };
-                    this.udpClient.Received += OnReceive;
-                    this.udpClient.Disconnected += OnDisconnected;
-                    this.udpClient.Connect();
-                    break;
-            }
+                IClientHandler client = (IClientHandler)sender;
+                this.LocalIPEndPoint = (IPEndPoint)client.GetLocalEndPoint();
+                this.Connected?.Invoke(this);
+            };
+            this.client.Received += OnReceive;
+            this.client.Disconnected += OnDisconnected;
+            this.client.Connect();
 
             this.timer = new()
             {
@@ -79,41 +61,21 @@ namespace SocketBackendFramework.Relay.Transport.Clients
         public void Respond(UpwardPacketContext context)
         {
             this.timer.Stop();
-            switch (this.config.TransportType)
-            {
-                case ExclusiveTransportType.Tcp:
-                    this.tcpClient.SendAfterConnected(context.PacketRawBuffer, context.PacketRawOffset, context.PacketRawSize);
-                    break;
-                case ExclusiveTransportType.Udp:
-                    this.udpClient.Send(context.PacketRawBuffer, context.PacketRawOffset, context.PacketRawSize);
-                    break;
-            }
+            this.client.Send(context.PacketRawBuffer, context.PacketRawOffset, context.PacketRawSize);
             this.timer.Start();
         }
 
         public void DisconnectAsync()
         {
             this.timer.Stop();
-            switch (this.config.TransportType)
-            {
-                case ExclusiveTransportType.Tcp:
-                    this.tcpClient.DisconnectAsync();
-                    break;
-                case ExclusiveTransportType.Udp:
-                    this.udpClient.Disconnect();
-                    break;
-                default:
-                    throw new ArgumentException();
-                    break;
-            }
+            this.client.Disconnect();
         }
 
         public void Dispose()
         {
             // Console.WriteLine("TransportAgent {} has been disposed.");
             this.timer.Dispose();
-            this.tcpClient?.Dispose();
-            this.udpClient?.Dispose();
+            this.client.Dispose();
         }
 
         private void OnDisconnected(object sender)
