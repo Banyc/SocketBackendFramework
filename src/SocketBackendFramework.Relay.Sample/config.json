@@ -10,11 +10,11 @@
                             "Listeners": [
                                 {
                                     "ListeningPort": 8080,
-                                    "TransportType": "Udp"
+                                    "TransportType": "udp"
                                 },
                                 {
                                     "ListeningPort": 8081,
-                                    "TransportType": "Tcp",
+                                    "TransportType": "tcp",
                                     "TcpSessionTimeoutMs": 2000  // ms
                                 }
                             ]
