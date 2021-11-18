@@ -13,9 +13,9 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 
     public class UdpClientHandler : NetCoreServer.UdpClient, IClientHandler
     {
-        public event ReceivedEventArgs Received;
-        public event ConnectionEventArgs Disconnected;
-        public event ConnectionEventArgs Connected;
+        public event ReceivedEventHandler Received;
+        public event ConnectionEventHandler Disconnected;
+        public event ConnectionEventHandler Connected;
 
         public UdpClientHandler(string address, int port) : base(address, port)
         {

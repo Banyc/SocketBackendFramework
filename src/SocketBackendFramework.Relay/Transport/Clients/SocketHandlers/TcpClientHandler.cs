@@ -14,9 +14,9 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 
     public class TcpClientHandler : NetCoreServer.TcpClient, IClientHandler
     {
-        public event ConnectionEventArgs Connected;
-        public event ReceivedEventArgs Received;
-        public event ConnectionEventArgs Disconnected;
+        public event ConnectionEventHandler Connected;
+        public event ReceivedEventHandler Received;
+        public event ConnectionEventHandler Disconnected;
 
         // null if connection has been established
         private Queue<byte[]>? pendingTransmission = new();

@@ -15,13 +15,13 @@ namespace SocketBackendFramework.Relay.Transport.Clients
         public event EventHandler<DownwardPacketContext> PacketReceived;
 
         // tell transport mapper when this object's local port is available.
-        public event ConnectionEventArgs Connected;
+        public event ConnectionEventHandler Connected;
 
         // tell transport mapper to dispose this
         public event EventHandler<DownwardPacketContext> Disconnected;
 
         // tell transport mapper to disconnect this
-        public event ConnectionEventArgs ClientTimedOut;
+        public event ConnectionEventHandler ClientTimedOut;
 
         // in case this info cannot be accessed from a disposed socket object
         public IPEndPoint LocalIPEndPoint { get; private set; }

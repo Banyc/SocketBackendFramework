@@ -10,9 +10,9 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 {
     public interface IServerHandler : IDisposable
     {
-        event EventHandler<ConnectionEventArgs> ClientConnected;
-        event EventHandler<ConnectionEventArgs> ClientDisconnected;
-        event EventHandler<ReceivedEventArgs> ClientMessageReceived;
+        event ConnectionEventHandler ClientConnected;
+        event ConnectionEventHandler ClientDisconnected;
+        event ReceivedEventHandler ClientMessageReceived;
 
         void Start();
         void Disconnect(EndPoint remoteEndPoint);
