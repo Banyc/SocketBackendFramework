@@ -16,7 +16,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 
         void Start();
         void Disconnect(EndPoint remoteEndPoint);
-        EndPoint LocalEndPoint { get; }
         string TransportType { get; }
+        EndPoint LocalEndPoint { get; }
     }
 }
