@@ -39,39 +39,50 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
         protected override void OnConnected(TcpSession session)
         {
             IClientHandler client = (IClientHandler)session;
-            this.ClientConnected?.Invoke(
-                this,
-                client.TransportType,
-                client.LocalEndPoint,
-                client.RemoteEndPoint);
+            Timer timeoutTimer = new Timer(this.tcpSessionTimeoutMs);
+            this.tcpSessions[client.RemoteEndPoint] = new()
+            {
+                ClientHandler = client,
+                TimeoutTimer = timeoutTimer,
+            };
+
+            // register callbacks
+            timeoutTimer.Elapsed += (sender, e) =>
+            {
+                this.Disconnect(client.RemoteEndPoint);
+            };
             client.Disconnected += (sender, transportType, localEndPoint, remoteEndPoint) =>
+            {
+                this.Disconnect(client.RemoteEndPoint);  
                 this.ClientDisconnected?.Invoke(
                     this,
                     transportType,
                     localEndPoint,
                     remoteEndPoint);
+            };
             client.Received += (sender, transportType, localEndPoint, remoteEndPoint, buffer, offset, size) =>
+            {
+                timeoutTimer.Stop();
                 this.ClientMessageReceived?.Invoke(
                     this,
                     transportType,
                     localEndPoint,
                     remoteEndPoint,
                     buffer, offset, size);
-            Timer timeoutTimer = new Timer(this.tcpSessionTimeoutMs);
-            timeoutTimer.Elapsed += (sender, e) =>
-            {
-                this.Disconnect(client.RemoteEndPoint);
+                timeoutTimer.Start();
             };
-            this.tcpSessions[client.RemoteEndPoint] = new()
-            {
-                ClientHandler = client,
-                TimeoutTimer = timeoutTimer,
-            };
+
+            timeoutTimer.Start();
+            this.ClientConnected?.Invoke(
+                this,
+                client.TransportType,
+                client.LocalEndPoint,
+                client.RemoteEndPoint);
         }
 
         protected override TcpSession CreateSession()
         {
-            TcpSessionHandler tcpSession = new(this, this.tcpSessionTimeoutMs);
+            TcpSessionHandler tcpSession = new(this);
             return tcpSession;
         }
         #endregion
