@@ -15,6 +15,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
         event ReceivedEventHandler ClientMessageReceived;
 
         void Start();
+        void Send(EndPoint remoteEndPoint, byte[] buffer, long offset, long size);
         void Disconnect(EndPoint remoteEndPoint);
         string TransportType { get; }
         EndPoint LocalEndPoint { get; }

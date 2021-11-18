@@ -15,8 +15,8 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
         void Connect();
         void Send(byte[] buffer, long offset, long size);
         void Disconnect();
+        string TransportType { get; }
         EndPoint LocalEndPoint { get; }
         EndPoint RemoteEndPoint { get; }
-        string TransportType { get; }
     }
 }
