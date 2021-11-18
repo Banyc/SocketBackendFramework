@@ -4,7 +4,15 @@ using SocketBackendFramework.Relay.Models.Delegates;
 
 namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 {
-    public class TcpClientHandler : NetCoreServer.TcpClient
+    public class TcpClientHandlerBuilder : IClientHandlerBuilder
+    {
+        public IClientHandler Build(string ipAddress, int port)
+        {
+            return new TcpClientHandler(ipAddress, port);
+        }
+    }
+
+    public class TcpClientHandler : NetCoreServer.TcpClient, IClientHandler
     {
         public event SimpleEventHandler Connected;
         public event ReceivedEventHandler Received;
@@ -73,5 +81,27 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
                 }
             }
         }
+
+#region IClientHandler
+        void IClientHandler.Connect()
+        {
+            this.ConnectAsync();
+        }
+
+        void IClientHandler.Send(byte[] buffer, long offset, long size)
+        {
+            this.SendAfterConnected(buffer, offset, size);
+        }
+
+        void IClientHandler.Disconnect()
+        {
+            this.DisconnectAsync();
+        }
+
+        public EndPoint GetLocalEndPoint()
+        {
+            return base.Socket.LocalEndPoint;
+        }
+#endregion
     }
 }

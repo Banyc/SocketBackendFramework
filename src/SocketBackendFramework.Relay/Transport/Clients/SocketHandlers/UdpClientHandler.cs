@@ -3,7 +3,15 @@ using SocketBackendFramework.Relay.Models.Delegates;
 
 namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 {
-    public class UdpClientHandler : NetCoreServer.UdpClient
+    public class UdpClientHandlerBuilder : IClientHandlerBuilder
+    {
+        public IClientHandler Build(string ipAddress, int port)
+        {
+            return new UdpClientHandler(ipAddress, port);
+        }
+    }
+
+    public class UdpClientHandler : NetCoreServer.UdpClient, IClientHandler
     {
         public event ReceivedEventHandler Received;
         public event SimpleEventHandler Disconnected;
@@ -31,5 +39,27 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
             base.OnDisconnected();
             this.Disconnected?.Invoke(this);
         }
+
+        #region IClientHandler
+        void IClientHandler.Connect()
+        {
+            this.Connect();
+        }
+
+        void IClientHandler.Send(byte[] buffer, long offset, long size)
+        {
+            this.Send(buffer, offset, size);
+        }
+
+        void IClientHandler.Disconnect()
+        {
+            this.Disconnect();
+        }
+
+        public EndPoint GetLocalEndPoint()
+        {
+            return base.Socket.LocalEndPoint;
+        }
+        #endregion
     }
 }

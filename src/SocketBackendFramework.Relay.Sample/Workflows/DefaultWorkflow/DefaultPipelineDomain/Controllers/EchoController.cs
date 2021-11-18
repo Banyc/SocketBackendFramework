@@ -39,8 +39,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             if (context.Request.Header.Type == DefaultPacketHeaderType.EchoByClient)
             {
                 int remotePort;
-                if (context.Request.PacketContext.FiveTuples.TransportType ==
-                    ExclusiveTransportType.Udp)
+                if (context.Request.PacketContext.FiveTuples.TransportType == "udp")
                 {
                     remotePort = context.Request.PacketContext.FiveTuples.Remote.Port;
                 }

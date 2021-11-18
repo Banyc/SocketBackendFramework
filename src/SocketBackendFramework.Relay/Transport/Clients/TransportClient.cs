@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using SocketBackendFramework.Relay.Models;
 using SocketBackendFramework.Relay.Models.Delegates;
@@ -32,13 +33,13 @@ namespace SocketBackendFramework.Relay.Transport.Clients
 
         private TransportClientConfig config;
 
-        public TransportClient(TransportClientConfig config, uint transportAgentId)
+        public TransportClient(TransportClientConfig config, Dictionary<string, IClientHandlerBuilder> builders, uint transportAgentId)
         {
             this.config = config;
             this.TransportAgentId = transportAgentId;
 
             // build client
-            this.client = new(config.RemoteAddress, config.RemotePort);
+            this.client = builders[config.TransportType].Build(config.RemoteAddress, config.RemotePort);
             this.client.Connected += sender =>
             {
                 IClientHandler client = (IClientHandler)sender;
