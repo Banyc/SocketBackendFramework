@@ -20,9 +20,6 @@ namespace SocketBackendFramework.Relay.Transport.Clients
         // tell transport mapper to dispose this
         public event EventHandler<DownwardPacketContext> Disconnected;
 
-        // tell transport mapper to disconnect this
-        public event ConnectionEventHandler ClientTimedOut;
-
         // in case this info cannot be accessed from a disposed socket object
         public IPEndPoint LocalIPEndPoint { get; private set; }
 
@@ -59,11 +56,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
                 Interval = config.ClientDisposeTimeout.TotalMilliseconds,
                 AutoReset = false,
             };
-            this.timer.Elapsed += (sender, e) => this.ClientTimedOut?.Invoke(
-                this,
-                this.client.TransportType,
-                this.client.LocalEndPoint,
-                this.client.RemoteEndPoint);
+            this.timer.Elapsed += (sender, e) => this.DisconnectAsync();
             this.timer.Start();
         }
 
