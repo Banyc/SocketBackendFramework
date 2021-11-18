@@ -6,7 +6,9 @@ using SocketBackendFramework.Relay.Models.Transport;
 using SocketBackendFramework.Relay.Models.Transport.PacketContexts;
 using SocketBackendFramework.Relay.Pipeline;
 using SocketBackendFramework.Relay.Transport.Clients;
+using SocketBackendFramework.Relay.Transport.Clients.SocketHandlers;
 using SocketBackendFramework.Relay.Transport.Listeners;
+using SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers;
 
 namespace SocketBackendFramework.Relay.Transport
 {
@@ -17,19 +19,31 @@ namespace SocketBackendFramework.Relay.Transport
         // local port -> client
         protected readonly ConcurrentDictionary<int, TransportClient> clients = new();
 
-        protected TransportMapper(TransportMapperConfig config)
+        private readonly TransportMapperConfig config;
+        private uint transportAgentIdCounter = 0;
+
+        private readonly Dictionary<string, IServerHandlerBuilder> serverBuilders;
+        private readonly Dictionary<string, IClientHandlerBuilder> clientBuilders;
+
+        protected TransportMapper(TransportMapperConfig config,
+                                  Dictionary<string, IServerHandlerBuilder> serverBuilders,
+                                  Dictionary<string, IClientHandlerBuilder> clientBuilders)
         {
+            this.config = config;
+            this.serverBuilders = serverBuilders;
+            this.clientBuilders = clientBuilders;
+
+            this.config = config;
+
             foreach (var listenerConfig in config.Listeners)
             {
-                Listener newListener = new(listenerConfig, this.transportAgentIdCounter++);
+                Listener newListener = new(listenerConfig, serverBuilders[listenerConfig.TransportType], this.transportAgentIdCounter++);
                 newListener.PacketReceived += OnDownwardEvent;
                 newListener.TcpServerConnected += this.OnDownwardEvent;
                 newListener.TcpSessionDisconnected += this.OnDownwardEvent;
                 this.listeners[listenerConfig.ListeningPort] = newListener;
             }
         }
-
-        private uint transportAgentIdCounter = 0;
 
         public void Start()
         {
@@ -89,8 +103,8 @@ namespace SocketBackendFramework.Relay.Transport
             else
             {
                 // create a dedicated client to send the packet
-                TransportClient newClient = new(context.ClientConfig, this.transportAgentIdCounter++);
-                newClient.Connected += sender => {
+                TransportClient newClient = new(context.ClientConfig, this.clientBuilders[context.ClientConfig.TransportType], this.transportAgentIdCounter++);
+                newClient.Connected += (sender, transportType, localEndPoint, remoteEndPoint) => {
                     TransportClient transportClient = (TransportClient)sender;
                     this.clients[transportClient.LocalIPEndPoint.Port] = transportClient;
                 };
@@ -107,10 +121,6 @@ namespace SocketBackendFramework.Relay.Transport
                     // dispose client before sending the event to pipeline
                     DisposeClient(sender);
                     this.OnDownwardEvent(sender, context);
-                };
-                newClient.ClientTimedOut += sender => {
-                    TransportClient client = (TransportClient)sender;
-                    client.DisconnectAsync();
                 };
                 newClient.Respond(context);
             }
@@ -134,8 +144,12 @@ namespace SocketBackendFramework.Relay.Transport
         private readonly Pipeline<TMiddlewareContext> pipeline;
         private readonly IContextAdaptor<TMiddlewareContext> contextAdaptor;
 
-        public TransportMapper(TransportMapperConfig config, Pipeline<TMiddlewareContext> pipeline, IContextAdaptor<TMiddlewareContext> contextAdaptor)
-            : base(config)
+        public TransportMapper(TransportMapperConfig config,
+                               Dictionary<string, IServerHandlerBuilder> serverBuilders,
+                               Dictionary<string, IClientHandlerBuilder> clientBuilders,
+                               Pipeline<TMiddlewareContext> pipeline,
+                               IContextAdaptor<TMiddlewareContext> contextAdaptor)
+            : base(config, serverBuilders, clientBuilders)
         {
             this.pipeline = pipeline;
             pipeline.GoneUp += this.OnSendingPacket;

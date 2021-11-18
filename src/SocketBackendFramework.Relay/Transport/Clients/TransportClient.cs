@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using SocketBackendFramework.Relay.Models;
 using SocketBackendFramework.Relay.Models.Delegates;
@@ -14,13 +15,10 @@ namespace SocketBackendFramework.Relay.Transport.Clients
         public event EventHandler<DownwardPacketContext> PacketReceived;
 
         // tell transport mapper when this object's local port is available.
-        public event SimpleEventHandler Connected;
+        public event ConnectionEventHandler Connected;
 
         // tell transport mapper to dispose this
         public event EventHandler<DownwardPacketContext> Disconnected;
-
-        // tell transport mapper to disconnect this
-        public event SimpleEventHandler ClientTimedOut;
 
         // in case this info cannot be accessed from a disposed socket object
         public IPEndPoint LocalIPEndPoint { get; private set; }
@@ -28,95 +26,61 @@ namespace SocketBackendFramework.Relay.Transport.Clients
         public uint TransportAgentId { get; }
 
         private readonly System.Timers.Timer timer;
-        private readonly TcpClientHandler? tcpClient;
-        private readonly UdpClientHandler? udpClient;
+        private readonly IClientHandler client;
 
         private TransportClientConfig config;
 
-        public TransportClient(TransportClientConfig config, uint transportAgentId)
+        public TransportClient(TransportClientConfig config, IClientHandlerBuilder builder, uint transportAgentId)
         {
             this.config = config;
             this.TransportAgentId = transportAgentId;
 
             // build client
-            switch (config.TransportType)
+            this.client = builder.Build(config.RemoteAddress, config.RemotePort);
+            this.client.Connected += (sender, transportType, localEndPoint, remoteEndPoint) =>
             {
-                case ExclusiveTransportType.Tcp:
-                    this.tcpClient = new(config.RemoteAddress, config.RemotePort);
-                    this.tcpClient.Connected += sender =>
-                    {
-                        TcpClientHandler tcpClient = (TcpClientHandler)sender;
-                        this.LocalIPEndPoint = (IPEndPoint)tcpClient.Socket.LocalEndPoint;
-                        this.Connected?.Invoke(this);
-                    };
-                    this.tcpClient.Received += OnReceive;
-                    this.tcpClient.Disconnected += OnDisconnected;
-                    this.tcpClient.ConnectAsync();
-                    break;
-                case ExclusiveTransportType.Udp:
-                    this.udpClient = new(config.RemoteAddress, config.RemotePort);
-                    this.udpClient.Connected += sender =>
-                    {
-                        UdpClientHandler udpClient = (UdpClientHandler)sender;
-                        this.LocalIPEndPoint = (IPEndPoint)udpClient.Socket.LocalEndPoint;
-                        this.Connected?.Invoke(this);
-                    };
-                    this.udpClient.Received += OnReceive;
-                    this.udpClient.Disconnected += OnDisconnected;
-                    this.udpClient.Connect();
-                    break;
-            }
+                IClientHandler client = (IClientHandler)sender;
+                this.LocalIPEndPoint = (IPEndPoint)client.LocalEndPoint;
+                this.Connected?.Invoke(
+                    this,
+                    transportType,
+                    localEndPoint,
+                    remoteEndPoint);
+            };
+            this.client.Received += OnReceive;
+            this.client.Disconnected += OnDisconnected;
+            this.client.Connect();
 
             this.timer = new()
             {
                 Interval = config.ClientDisposeTimeout.TotalMilliseconds,
                 AutoReset = false,
             };
-            this.timer.Elapsed += (sender, e) => this.ClientTimedOut?.Invoke(this);
+            this.timer.Elapsed += (sender, e) => this.DisconnectAsync();
             this.timer.Start();
         }
 
         public void Respond(UpwardPacketContext context)
         {
             this.timer.Stop();
-            switch (this.config.TransportType)
-            {
-                case ExclusiveTransportType.Tcp:
-                    this.tcpClient.SendAfterConnected(context.PacketRawBuffer, context.PacketRawOffset, context.PacketRawSize);
-                    break;
-                case ExclusiveTransportType.Udp:
-                    this.udpClient.Send(context.PacketRawBuffer, context.PacketRawOffset, context.PacketRawSize);
-                    break;
-            }
+            this.client.Send(context.PacketRawBuffer, context.PacketRawOffset, context.PacketRawSize);
             this.timer.Start();
         }
 
         public void DisconnectAsync()
         {
             this.timer.Stop();
-            switch (this.config.TransportType)
-            {
-                case ExclusiveTransportType.Tcp:
-                    this.tcpClient.DisconnectAsync();
-                    break;
-                case ExclusiveTransportType.Udp:
-                    this.udpClient.Disconnect();
-                    break;
-                default:
-                    throw new ArgumentException();
-                    break;
-            }
+            this.client.Disconnect();
         }
 
         public void Dispose()
         {
             // Console.WriteLine("TransportAgent {} has been disposed.");
             this.timer.Dispose();
-            this.tcpClient?.Dispose();
-            this.udpClient?.Dispose();
+            this.client.Dispose();
         }
 
-        private void OnDisconnected(object sender)
+        private void OnDisconnected(object sender, string transportType, EndPoint localEndPoint, EndPoint remoteEndPoint)
         {
             this.timer.Stop();
             this.Disconnected?.Invoke(this, new()
@@ -133,7 +97,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             });
         }
 
-        private void OnReceive(object sender, EndPoint remoteEndpoint, byte[] buffer, long offset, long size)
+        private void OnReceive(object sender, string transportType, EndPoint localEndPoint, EndPoint remoteEndpoint, byte[] buffer, long offset, long size)
         {
             this.timer.Stop();
             IPEndPoint remoteIPEndPoint = (IPEndPoint)remoteEndpoint;

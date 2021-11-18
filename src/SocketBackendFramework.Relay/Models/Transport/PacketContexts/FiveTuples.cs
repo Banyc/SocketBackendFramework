@@ -6,6 +6,6 @@ namespace SocketBackendFramework.Relay.Models.Transport.PacketContexts
     {
         public IPEndPoint Remote { get; init; }
         public IPEndPoint Local { get; init; }
-        public ExclusiveTransportType TransportType { get; init; }
+        public string TransportType { get; init; }
     }
 }

@@ -4,22 +4,39 @@ using SocketBackendFramework.Relay.Models.Delegates;
 
 namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 {
-    public class TcpClientHandler : NetCoreServer.TcpClient
+    public class TcpClientHandlerBuilder : IClientHandlerBuilder
     {
-        public event SimpleEventHandler Connected;
+        public IClientHandler Build(string ipAddress, int port)
+        {
+            return new TcpClientHandler(ipAddress, port);
+        }
+    }
+
+    public class TcpClientHandler : NetCoreServer.TcpClient, IClientHandler
+    {
+        public event ConnectionEventHandler Connected;
         public event ReceivedEventHandler Received;
-        public event SimpleEventHandler Disconnected;
+        public event ConnectionEventHandler Disconnected;
 
         // null if connection has been established
         private Queue<byte[]>? pendingTransmission = new();
 
         public TcpClientHandler(string address, int port) : base(address, port)
         {
+            this.remoteEndPoint = new IPEndPoint(IPAddress.Parse(address), port);
         }
 
         protected override void OnConnected()
         {
-            this.Connected?.Invoke(this);
+            // cache endpoint info
+            this.localEndPoint = base.Socket.LocalEndPoint;
+            this.remoteEndPoint = base.Socket.RemoteEndPoint;
+
+            this.Connected?.Invoke(
+                this,
+                "tcp",
+                this.localEndPoint,
+                this.remoteEndPoint);
             lock (this.pendingTransmission!)
             {
                 while (this.pendingTransmission.Count > 0)
@@ -35,16 +52,24 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 
         protected override void OnReceived(byte[] buffer, long offset, long size)
         {
-            EndPoint remoteEndPoint = this.Socket.RemoteEndPoint;
             base.OnReceived(buffer, offset, size);
-            this.Received?.Invoke(this, remoteEndPoint, buffer, offset, size);
+            this.Received?.Invoke(
+                this,
+                "tcp",
+                this.localEndPoint,
+                this.remoteEndPoint,
+                buffer, offset, size);
             // base.ReceiveAsync();  // TcpClient will try to receive again after exiting base.OnReceived
         }
 
         protected override void OnDisconnected()
         {
             base.OnDisconnected();
-            this.Disconnected?.Invoke(this);
+            this.Disconnected?.Invoke(
+                this,
+                "tcp",
+                this.localEndPoint,
+                this.remoteEndPoint);
         }
 
         public void SendAfterConnected(byte[] buffer, long offset, long size)
@@ -73,5 +98,30 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
                 }
             }
         }
+
+        #region IClientHandler
+        void IClientHandler.Connect()
+        {
+            this.ConnectAsync();
+        }
+
+        void IClientHandler.Send(byte[] buffer, long offset, long size)
+        {
+            this.SendAfterConnected(buffer, offset, size);
+        }
+
+        void IClientHandler.Disconnect()
+        {
+            this.DisconnectAsync();
+        }
+
+        private EndPoint localEndPoint = null;
+        EndPoint IClientHandler.LocalEndPoint { get => this.localEndPoint; }
+
+        private EndPoint remoteEndPoint = null;
+        EndPoint IClientHandler.RemoteEndPoint { get => this.remoteEndPoint; }
+
+        string IClientHandler.TransportType { get => "tcp"; }
+        #endregion
     }
 }
