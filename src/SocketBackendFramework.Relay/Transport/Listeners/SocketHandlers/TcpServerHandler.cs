@@ -19,11 +19,18 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 
     public class TcpServerHandler : TcpServer, IServerHandler
     {
-        private struct ClientInfo
+        private struct ClientInfo : IDisposable
         {
             public IClientHandler ClientHandler;
             public Timer TimeoutTimer;
+
+            public void Dispose()
+            {
+                this.ClientHandler.Dispose();
+                this.TimeoutTimer.Dispose();
+            }
         }
+
         private readonly double tcpSessionTimeoutMs;
 
         // remote endpoint -> session
@@ -113,11 +120,18 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
         public void Disconnect(EndPoint remoteEndPoint)
         {
             var clientInfo = this.tcpSessions[remoteEndPoint];
-            clientInfo.TimeoutTimer.Stop();
-            clientInfo.TimeoutTimer.Dispose();
-            clientInfo.ClientHandler.Disconnect();
-            clientInfo.ClientHandler.Dispose();
+            clientInfo.Dispose();
             this.tcpSessions.TryRemove(remoteEndPoint, out _);
+        }
+
+        void IDisposable.Dispose()
+        {
+            foreach (var clientInfo in this.tcpSessions.Values)
+            {
+                clientInfo.Dispose();
+            }
+            this.tcpSessions.Clear();
+            base.Dispose();
         }
         #endregion
     }
