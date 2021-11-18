@@ -74,15 +74,12 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
         }
 
         private EndPoint localEndPoint = null;
-        EndPoint IClientHandler.LocalEndPoint { get => localEndPoint; }
+        EndPoint IClientHandler.LocalEndPoint { get => this.localEndPoint; }
 
         private EndPoint remoteEndPoint = null;
-        EndPoint IClientHandler.RemoteEndPoint { get => remoteEndPoint; }
+        EndPoint IClientHandler.RemoteEndPoint { get => this.remoteEndPoint; }
 
-        string IClientHandler.TransportType
-        {
-            get => "udp";
-        }
+        string IClientHandler.TransportType { get => "udp"; }
         #endregion
     }
 }

@@ -23,15 +23,20 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 
         public TcpClientHandler(string address, int port) : base(address, port)
         {
+            this.remoteEndPoint = new IPEndPoint(IPAddress.Parse(address), port);
         }
 
         protected override void OnConnected()
         {
+            // cache endpoint info
+            this.localEndPoint = base.Socket.LocalEndPoint;
+            this.remoteEndPoint = base.Socket.RemoteEndPoint;
+
             this.Connected?.Invoke(
                 this,
                 "tcp",
-                base.Socket.LocalEndPoint,
-                base.Socket.RemoteEndPoint);
+                this.localEndPoint,
+                this.remoteEndPoint);
             lock (this.pendingTransmission!)
             {
                 while (this.pendingTransmission.Count > 0)
@@ -51,8 +56,8 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
             this.Received?.Invoke(
                 this,
                 "tcp",
-                base.Socket.LocalEndPoint,
-                base.Socket.RemoteEndPoint,
+                this.localEndPoint,
+                this.remoteEndPoint,
                 buffer, offset, size);
             // base.ReceiveAsync();  // TcpClient will try to receive again after exiting base.OnReceived
         }
@@ -63,8 +68,8 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
             this.Disconnected?.Invoke(
                 this,
                 "tcp",
-                base.Socket.LocalEndPoint,
-                base.Socket.RemoteEndPoint);
+                this.localEndPoint,
+                this.remoteEndPoint);
         }
 
         public void SendAfterConnected(byte[] buffer, long offset, long size)
@@ -110,20 +115,13 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
             this.DisconnectAsync();
         }
 
-        EndPoint IClientHandler.LocalEndPoint
-        {
-            get => base.Socket.LocalEndPoint;
-        }
+        private EndPoint localEndPoint = null;
+        EndPoint IClientHandler.LocalEndPoint { get => this.localEndPoint; }
 
-        EndPoint IClientHandler.RemoteEndPoint
-        {
-            get => base.Socket.RemoteEndPoint;
-        }
+        private EndPoint remoteEndPoint = null;
+        EndPoint IClientHandler.RemoteEndPoint { get => this.remoteEndPoint; }
 
-        string IClientHandler.TransportType
-        {
-            get => "tcp";
-        }
+        string IClientHandler.TransportType { get => "tcp"; }
         #endregion
     }
 }
