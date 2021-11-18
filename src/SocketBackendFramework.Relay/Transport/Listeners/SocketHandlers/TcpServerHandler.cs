@@ -4,10 +4,19 @@ using System.Net;
 using System.Timers;
 using NetCoreServer;
 using SocketBackendFramework.Relay.Models.Delegates;
+using SocketBackendFramework.Relay.Models.Transport.Listeners;
 using SocketBackendFramework.Relay.Transport.Clients.SocketHandlers;
 
 namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 {
+    public class TcpServerHandlerBuilder : IServerHandlerBuilder
+    {
+        public IServerHandler Build(IPAddress ipAddress, int port, ListenerConfig config)
+        {
+            return new TcpServerHandler(ipAddress, port, config.TcpSessionTimeoutMs);
+        }
+    }
+
     public class TcpServerHandler : TcpServer, IServerHandler
     {
         private struct ClientInfo

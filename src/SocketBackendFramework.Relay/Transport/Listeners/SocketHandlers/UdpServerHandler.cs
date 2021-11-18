@@ -1,15 +1,31 @@
 using System.Net;
 using NetCoreServer;
+using SocketBackendFramework.Relay.Models.Delegates;
+using SocketBackendFramework.Relay.Models.Transport.Listeners;
 
 namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 {
-    public class UdpServerHandler : UdpServer
+    public class UdpServerHandlerBuilder : IServerHandlerBuilder
     {
-        public delegate void ReceivedEventHandler(object sender, EndPoint endpoint, byte[] buffer, long offset, long size);
-        public event ReceivedEventHandler Received;
+        public IServerHandler Build(IPAddress ipAddress, int port, ListenerConfig config)
+        {
+            return new UdpServerHandler(ipAddress, port);
+        }
+    }
+
+    public class UdpServerHandler : UdpServer, IServerHandler
+    {
+        public string TransportType => "udp";
+
+        public EndPoint LocalEndPoint { get; }
+
+        public event ConnectionEventHandler ClientConnected;
+        public event ConnectionEventHandler ClientDisconnected;
+        public event ReceivedEventHandler ClientMessageReceived;
 
         public UdpServerHandler(IPAddress address, int port) : base(address, port)
         {
+            this.LocalEndPoint = new IPEndPoint(address, port);
         }
 
         protected override void OnStarted()
@@ -20,9 +36,29 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 
         protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
         {
-            base.OnReceived(endpoint, buffer, offset, size);
-            this.Received?.Invoke(this, endpoint, buffer, offset, size);
+            this.ClientMessageReceived?.Invoke(
+                this,
+                "udp",
+                this.LocalEndPoint,
+                endpoint,
+                buffer, offset, size);
             base.ReceiveAsync();
         }
+
+        #region IServerHandler
+        void IServerHandler.Start()
+        {
+            base.Start();
+        }
+
+        void IServerHandler.Send(EndPoint remoteEndPoint, byte[] buffer, long offset, long size)
+        {
+            base.SendAsync(remoteEndPoint, buffer, offset, size);
+        }
+
+        public void Disconnect(EndPoint remoteEndPoint)
+        {
+        }
+        #endregion
     }
 }
