@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Net;
+using System.Timers;
 using NetCoreServer;
 using SocketBackendFramework.Relay.Models.Delegates;
 using SocketBackendFramework.Relay.Transport.Clients.SocketHandlers;
@@ -9,11 +10,16 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 {
     public class TcpServerHandler : TcpServer, IServerHandler
     {
+        private struct ClientInfo
+        {
+            public IClientHandler ClientHandler;
+            public Timer TimeoutTimer;
+        }
         private readonly double tcpSessionTimeoutMs;
 
         // remote endpoint -> session
         // private readonly ConcurrentDictionary<EndPoint, TcpSessionHandler> tcpSessions = new();
-        private readonly ConcurrentDictionary<EndPoint, IClientHandler> tcpSessions = new();
+        private readonly ConcurrentDictionary<EndPoint, ClientInfo> tcpSessions = new();
 
         public string TransportType => "tcp";
 
@@ -51,7 +57,16 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
                     localEndPoint,
                     remoteEndPoint,
                     buffer, offset, size);
-            this.tcpSessions[client.RemoteEndPoint] = client;
+            Timer timeoutTimer = new Timer(this.tcpSessionTimeoutMs);
+            timeoutTimer.Elapsed += (sender, e) =>
+            {
+                this.Disconnect(client.RemoteEndPoint);
+            };
+            this.tcpSessions[client.RemoteEndPoint] = new()
+            {
+                ClientHandler = client,
+                TimeoutTimer = timeoutTimer,
+            };
         }
 
         protected override TcpSession CreateSession()
@@ -69,13 +84,19 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 
         void IServerHandler.Send(EndPoint remoteEndPoint, byte[] buffer, long offset, long size)
         {
-            this.tcpSessions[remoteEndPoint].Send(buffer, offset, size);
+            var clientInfo = this.tcpSessions[remoteEndPoint];
+            clientInfo.TimeoutTimer.Stop();
+            clientInfo.ClientHandler.Send(buffer, offset, size);
+            clientInfo.TimeoutTimer.Start();
         }
 
         public void Disconnect(EndPoint remoteEndPoint)
         {
-            this.tcpSessions[remoteEndPoint].Disconnect();
-            this.tcpSessions[remoteEndPoint].Dispose();
+            var clientInfo = this.tcpSessions[remoteEndPoint];
+            clientInfo.TimeoutTimer.Stop();
+            clientInfo.TimeoutTimer.Dispose();
+            clientInfo.ClientHandler.Disconnect();
+            clientInfo.ClientHandler.Dispose();
             this.tcpSessions.TryRemove(remoteEndPoint, out _);
         }
         #endregion
