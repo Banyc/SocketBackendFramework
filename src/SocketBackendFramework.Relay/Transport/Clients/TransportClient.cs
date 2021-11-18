@@ -15,13 +15,13 @@ namespace SocketBackendFramework.Relay.Transport.Clients
         public event EventHandler<DownwardPacketContext> PacketReceived;
 
         // tell transport mapper when this object's local port is available.
-        public event SimpleEventHandler Connected;
+        public event ConnectionEventArgs Connected;
 
         // tell transport mapper to dispose this
         public event EventHandler<DownwardPacketContext> Disconnected;
 
         // tell transport mapper to disconnect this
-        public event SimpleEventHandler ClientTimedOut;
+        public event ConnectionEventArgs ClientTimedOut;
 
         // in case this info cannot be accessed from a disposed socket object
         public IPEndPoint LocalIPEndPoint { get; private set; }
@@ -40,11 +40,15 @@ namespace SocketBackendFramework.Relay.Transport.Clients
 
             // build client
             this.client = builders[config.TransportType].Build(config.RemoteAddress, config.RemotePort);
-            this.client.Connected += sender =>
+            this.client.Connected += (sender, transportType, localEndPoint, remoteEndPoint) =>
             {
                 IClientHandler client = (IClientHandler)sender;
-                this.LocalIPEndPoint = (IPEndPoint)client.GetLocalEndPoint();
-                this.Connected?.Invoke(this);
+                this.LocalIPEndPoint = (IPEndPoint)client.LocalEndPoint;
+                this.Connected?.Invoke(
+                    this,
+                    transportType,
+                    localEndPoint,
+                    remoteEndPoint);
             };
             this.client.Received += OnReceive;
             this.client.Disconnected += OnDisconnected;
@@ -55,7 +59,11 @@ namespace SocketBackendFramework.Relay.Transport.Clients
                 Interval = config.ClientDisposeTimeout.TotalMilliseconds,
                 AutoReset = false,
             };
-            this.timer.Elapsed += (sender, e) => this.ClientTimedOut?.Invoke(this);
+            this.timer.Elapsed += (sender, e) => this.ClientTimedOut?.Invoke(
+                this,
+                this.client.TransportType,
+                this.client.LocalEndPoint,
+                this.client.RemoteEndPoint);
             this.timer.Start();
         }
 
@@ -79,7 +87,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             this.client.Dispose();
         }
 
-        private void OnDisconnected(object sender)
+        private void OnDisconnected(object sender, string transportType, EndPoint localEndPoint, EndPoint remoteEndPoint)
         {
             this.timer.Stop();
             this.Disconnected?.Invoke(this, new()
@@ -96,7 +104,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             });
         }
 
-        private void OnReceive(object sender, EndPoint remoteEndpoint, byte[] buffer, long offset, long size)
+        private void OnReceive(object sender, string transportType, EndPoint localEndPoint, EndPoint remoteEndpoint, byte[] buffer, long offset, long size)
         {
             this.timer.Stop();
             IPEndPoint remoteIPEndPoint = (IPEndPoint)remoteEndpoint;

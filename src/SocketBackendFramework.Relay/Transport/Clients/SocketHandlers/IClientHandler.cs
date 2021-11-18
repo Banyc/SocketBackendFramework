@@ -9,12 +9,14 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 {
     public interface IClientHandler : IDisposable
     {
-        event SimpleEventHandler Connected;
-        event ReceivedEventHandler Received;
-        event SimpleEventHandler Disconnected;
+        event ConnectionEventArgs Connected;
+        event ReceivedEventArgs Received;
+        event ConnectionEventArgs Disconnected;
         void Connect();
         void Send(byte[] buffer, long offset, long size);
         void Disconnect();
-        EndPoint GetLocalEndPoint();
+        EndPoint LocalEndPoint { get; }
+        EndPoint RemoteEndPoint { get; }
+        string TransportType { get; }
     }
 }
