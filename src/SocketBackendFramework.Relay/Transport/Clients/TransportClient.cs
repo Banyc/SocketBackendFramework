@@ -33,13 +33,13 @@ namespace SocketBackendFramework.Relay.Transport.Clients
 
         private TransportClientConfig config;
 
-        public TransportClient(TransportClientConfig config, Dictionary<string, IClientHandlerBuilder> builders, uint transportAgentId)
+        public TransportClient(TransportClientConfig config, IClientHandlerBuilder builder, uint transportAgentId)
         {
             this.config = config;
             this.TransportAgentId = transportAgentId;
 
             // build client
-            this.client = builders[config.TransportType].Build(config.RemoteAddress, config.RemotePort);
+            this.client = builder.Build(config.RemoteAddress, config.RemotePort);
             this.client.Connected += (sender, transportType, localEndPoint, remoteEndPoint) =>
             {
                 IClientHandler client = (IClientHandler)sender;
