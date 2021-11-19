@@ -7,7 +7,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 {
     public class UdpServerHandlerBuilder : IServerHandlerBuilder
     {
-        public IServerHandler Build(IPAddress ipAddress, int port, ListenerConfig config)
+        public IServerHandler Build(IPAddress ipAddress, int port, string configId)
         {
             return new UdpServerHandler(ipAddress, port);
         }

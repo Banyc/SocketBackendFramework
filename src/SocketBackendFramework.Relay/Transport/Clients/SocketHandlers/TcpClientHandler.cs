@@ -6,7 +6,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 {
     public class TcpClientHandlerBuilder : IClientHandlerBuilder
     {
-        public IClientHandler Build(string ipAddress, int port)
+        public IClientHandler Build(string ipAddress, int port, string configId)
         {
             return new TcpClientHandler(ipAddress, port);
         }

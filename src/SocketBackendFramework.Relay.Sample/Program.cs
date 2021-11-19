@@ -27,7 +27,7 @@ using WorkflowPool workflowPool = new(workflowPoolConfig);
 
 WorkflowConfig workflowConfig = workflowPool.GetWorkflowConfig("default");
 
-WorkflowBuilder workflowBuilder = new DefaultWorkflowBuilder(workflowConfig);
+WorkflowBuilder workflowBuilder = new DefaultWorkflowBuilder(workflowConfig, configRoot);
 
 workflowPool.AddWorkflow(workflowBuilder.Build());
 

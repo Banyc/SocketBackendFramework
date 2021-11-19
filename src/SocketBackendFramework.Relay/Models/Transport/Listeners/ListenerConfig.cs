@@ -7,5 +7,6 @@ namespace SocketBackendFramework.Relay.Models.Transport.Listeners
         public int ListeningPort { get; set; }
         public string TransportType { get; set; }
         public double TcpSessionTimeoutMs { get; set; }
+        public string SocketHandlerConfigId { get; set; }
     }
 }

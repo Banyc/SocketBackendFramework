@@ -10,12 +10,13 @@
                             "Listeners": [
                                 {
                                     "ListeningPort": 8080,
-                                    "TransportType": "udp"
+                                    "TransportType": "udp",
+                                    "SocketHandlerConfigId": null
                                 },
                                 {
                                     "ListeningPort": 8081,
                                     "TransportType": "tcp",
-                                    "TcpSessionTimeoutMs": 2000  // ms
+                                    "SocketHandlerConfigId": "defaultTcpServerHandlerConfig"
                                 }
                             ]
                         }
@@ -23,6 +24,13 @@
                 ]
             }
         ]
-    }
+    },
     // users' configurations here
+    "TcpServerHandlerBuilder": {
+        "TcpServerHandlers": {
+            "defaultTcpServerHandlerConfig": {  // SocketHandlerConfigId
+                "SessionTimeoutMs": 2000
+            }
+        }
+    }
 }

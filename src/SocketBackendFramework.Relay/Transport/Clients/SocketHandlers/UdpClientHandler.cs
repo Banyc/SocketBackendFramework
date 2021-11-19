@@ -5,7 +5,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 {
     public class UdpClientHandlerBuilder : IClientHandlerBuilder
     {
-        public IClientHandler Build(string ipAddress, int port)
+        public IClientHandler Build(string ipAddress, int port, string configId)
         {
             return new UdpClientHandler(ipAddress, port);
         }

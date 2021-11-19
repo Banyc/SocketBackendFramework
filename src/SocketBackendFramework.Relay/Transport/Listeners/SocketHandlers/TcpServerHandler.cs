@@ -5,15 +5,22 @@ using System.Timers;
 using NetCoreServer;
 using SocketBackendFramework.Relay.Models.Delegates;
 using SocketBackendFramework.Relay.Models.Transport.Listeners;
+using SocketBackendFramework.Relay.Models.Transport.Listeners.SocketHandlers;
 using SocketBackendFramework.Relay.Transport.Clients.SocketHandlers;
 
 namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 {
     public class TcpServerHandlerBuilder : IServerHandlerBuilder
     {
-        public IServerHandler Build(IPAddress ipAddress, int port, ListenerConfig config)
+        private readonly TcpServerHandlerBuilderConfig config;
+        public TcpServerHandlerBuilder(TcpServerHandlerBuilderConfig config)
         {
-            return new TcpServerHandler(ipAddress, port, config.TcpSessionTimeoutMs);
+            this.config = config;
+        }
+        public IServerHandler Build(IPAddress ipAddress, int port, string configId)
+        {
+            return new TcpServerHandler(ipAddress, port,
+                                        this.config.TcpServerHandlers[configId].SessionTimeoutMs);
         }
     }
 

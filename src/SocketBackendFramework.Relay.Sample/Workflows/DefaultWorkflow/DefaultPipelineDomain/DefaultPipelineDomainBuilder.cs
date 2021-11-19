@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using SocketBackendFramework.Relay.Models.Pipeline;
+using SocketBackendFramework.Relay.Models.Transport.Listeners.SocketHandlers;
 using SocketBackendFramework.Relay.Pipeline;
 using SocketBackendFramework.Relay.Pipeline.Middlewares.Codec;
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Middlewares;
@@ -11,8 +12,11 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 {
     public class DefaultPipelineDomainBuilder : PipelineDomainBuilder<DefaultMiddlewareContext>
     {
-        public DefaultPipelineDomainBuilder(PipelineDomainConfig config) : base(config)
+        private readonly TcpServerHandlerBuilderConfig tcpServerHandlerBuilderConfig;
+
+        public DefaultPipelineDomainBuilder(PipelineDomainConfig config, TcpServerHandlerBuilderConfig tcpServerHandlerBuilderConfig) : base(config)
         {
+            this.tcpServerHandlerBuilderConfig = tcpServerHandlerBuilderConfig;
         }
 
         public override PipelineDomain<DefaultMiddlewareContext> Build()
@@ -22,7 +26,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             // setup transport layer
             Dictionary<string, IServerHandlerBuilder> serverHandlerBuilders = new()
             {
-                { "tcp", new TcpServerHandlerBuilder() },
+                { "tcp", new TcpServerHandlerBuilder(this.tcpServerHandlerBuilderConfig) },
                 { "udp", new UdpServerHandlerBuilder() },
             };
             Dictionary<string, IClientHandlerBuilder> clientHandlerBuilders = new()
