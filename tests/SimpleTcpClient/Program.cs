@@ -26,6 +26,14 @@ async Task<TcpClient> GetConnectedClientAsync()
     return client;
 }
 
+async Task<TcpClient> ReconnectToTheServerAsync(TcpClient client)
+{
+    client.Dispose();
+    var newClient = await GetConnectedClientAsync();
+    Console.WriteLine("Reconnected.");
+    return newClient;
+}
+
 bool isGetEchoFromTheSameTransportAgent;
 Console.Write("Get echo from the same transport agent? (Y/n) > ");
 isGetEchoFromTheSameTransportAgent = string.Compare(Console.ReadLine(), "n", ignoreCase: true) != 0;
@@ -52,14 +60,14 @@ else
 }
 string hello = "hello";
 
+Task<TcpClient> listeningTask = null;
+if (!isGetEchoFromTheSameTransportAgent)
+{
+    listeningTask = listener.AcceptTcpClientAsync();
+}
 
 while (true)
 {
-    Task<TcpClient> listeningTask = null;
-    if (!isGetEchoFromTheSameTransportAgent)
-    {
-        listeningTask = listener.AcceptTcpClientAsync();
-    }
 
     Console.Write("Send > ");
     string userMessage = Console.ReadLine();
@@ -74,23 +82,37 @@ while (true)
     await stream.WriteAsync(packet.ToArray(), 0, packet.Count);
     Console.WriteLine($"Sent     \"{hello}\" ({packet.Count} bytes).");
 
+    // TODO: check if the connection is been disconnected
+
     if (!isGetEchoFromTheSameTransportAgent)
     {
-        listenerSession?.Dispose();
-        listenerSession = await listeningTask;
-        // if the transmission to the server failed due to disconnection, the following receiving will block forever.
-        stream = listenerSession.GetStream();
+        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(1));
+        Task anyTask = await Task.WhenAny(listeningTask, timeoutTask);
+        if (anyTask == listeningTask)
+        {
+            // get message from listenerSession
+            listenerSession = await listeningTask;
+            await ReadFromClientAsync(listenerSession.GetStream());
+            // disconnect listenerSession and start listening a new one
+            listenerSession?.Dispose();
+            listeningTask = listener.AcceptTcpClientAsync();
+        }
+        else
+        {
+            Console.WriteLine("No new connection initiated by the server. The disconnection from the remote session might be the cause.");
+            client = await ReconnectToTheServerAsync(client);
+        }
     }
-
-    try
+    else
     {
-        await ReadFromClientAsync(stream);
-    }
-    catch (System.IO.IOException ex)
-    {
-        Console.WriteLine($"Transmission failed: {ex.Message}");
-        client.Dispose();
-        client = await GetConnectedClientAsync();
-        Console.WriteLine("Reconnected.");
+        try
+        {
+            await ReadFromClientAsync(client.GetStream());
+        }
+        catch (System.IO.IOException ex)
+        {
+            Console.WriteLine($"Transmission failed: {ex.Message}");
+            client = await ReconnectToTheServerAsync(client);
+        }
     }
 }
