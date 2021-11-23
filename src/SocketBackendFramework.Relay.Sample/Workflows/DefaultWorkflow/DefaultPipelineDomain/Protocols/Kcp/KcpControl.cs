@@ -18,7 +18,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             public uint Timestamp;
         }
 
-        private UInt32 conversationId;
+        private readonly uint conversationId;
         public uint Mtu { get; set; } = 1400;  // maximum transmission unit
         private uint MaxSegmentDataSize { get => this.Mtu - KcpSegment.DataOffset; }  // maximum segment size
 
@@ -40,7 +40,6 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private uint nextSequenceNumberToSend = 0;  // snd_nxt
 
         // window size (out-of-order queue size)
-        private readonly uint sendWindowSize;  // snd_wnd
         private readonly uint receiveWindowSize;  // rcv_wnd  // out-of-order queue size
         private uint remoteWindowSize;
 
@@ -90,16 +89,16 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private bool isStreamMode;
 
         public KcpControl(uint conversationId,
-                          bool isStreamMode)
+                          bool isStreamMode,
+                          uint receiveWindowSize)
         {
             this.conversationId = conversationId;
             this.isStreamMode = isStreamMode;
+            this.receiveWindowSize = receiveWindowSize;
         }
 
         public void Input(Span<byte> rawData)
         {
-            bool hasProcessedFirstAck = false;
-
             while (true)
             {
                 if (rawData.Length == 0)

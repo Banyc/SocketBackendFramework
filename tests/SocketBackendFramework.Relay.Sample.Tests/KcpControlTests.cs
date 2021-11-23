@@ -16,8 +16,8 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             byte[] bigBuffer = new byte[1024 * 1024 * 10];
             int writtenDataSize;
             Span<byte> bufferSpan = bigBuffer.AsSpan();
-            KcpControl kcpControl_1 = new KcpControl(0x1, false);
-            KcpControl kcpControl_2 = new KcpControl(0x1, false);
+            KcpControl kcpControl_1 = new KcpControl(0x1, false, 0);
+            KcpControl kcpControl_2 = new KcpControl(0x1, false, 0);
 
             string applicationString = "hello world";
             byte[] applicationBytes = System.Text.Encoding.UTF8.GetBytes(applicationString);
@@ -47,8 +47,8 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             byte[] bigBuffer = new byte[1024 * 1024 * 10];
             int writtenDataSize;
             Span<byte> bufferSpan = bigBuffer.AsSpan();
-            KcpControl kcpControl_1 = new KcpControl(0x1, false);
-            KcpControl kcpControl_2 = new KcpControl(0x1, false);
+            KcpControl kcpControl_1 = new KcpControl(0x1, false, 0);
+            KcpControl kcpControl_2 = new KcpControl(0x1, false, 0);
 
             byte[] applicationBytes = new byte[kcpControl_1.Mtu * 2];
             random.NextBytes(applicationBytes);
