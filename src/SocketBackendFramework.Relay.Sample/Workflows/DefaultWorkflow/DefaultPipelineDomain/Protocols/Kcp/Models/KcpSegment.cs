@@ -162,10 +162,8 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             }
         }
 
-        // public KcpSegment(int bufferSize)
         public KcpSegment(uint dataLength)
         {
-            // Buffer = new byte[bufferSize];
             Buffer = new byte[dataLength + (int)KcpSegment.DataOffset];
 
             ConversationId = 0;
