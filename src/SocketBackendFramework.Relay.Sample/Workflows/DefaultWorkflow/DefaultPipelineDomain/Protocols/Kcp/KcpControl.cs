@@ -116,9 +116,6 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 {
                     case Command.Ack:
                         {
-                            if (this.CurrentTimestamp >= segment.Timestamp)
-                            {
-                            }
                             // this specific segment is acknowledged and should be removed
                             this.sendingQueue.Remove(segment.SequenceNumber);
                         }
