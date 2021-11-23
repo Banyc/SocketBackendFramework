@@ -26,7 +26,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         {
             get
             {
-                uint? firstSentUnacknowledged = this.sentQueue.GetFirstSequenceNumber();
+                uint? firstSentUnacknowledged = this.sendingQueue.GetFirstSequenceNumber();
                 if (firstSentUnacknowledged == null)
                 {
                     return this.nextSequenceNumberToSend;
@@ -48,15 +48,15 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private uint CurrentTimestamp { get => (uint)(DateTime.Now.ToBinary() >> 32); }  // current
 
         // unsent segments
-        private readonly KcpSegmentQueue sendingQueue = new();  // snd_queue
+        private readonly KcpSegmentQueue toSendQueue = new();  // snd_queue
 
         // sent but unacked segments
-        private readonly KcpSegmentQueue sentQueue = new();  // snd_buf
+        private readonly KcpSegmentQueue sendingQueue = new();  // snd_buf
         private uint LastAckedSentSequenceNumber
         {
             get
             {
-                return this.sentQueue.PreviousSequenceNumber;
+                return this.sendingQueue.PreviousSequenceNumber;
             }
         }
 
@@ -133,7 +133,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
 
                 // all segments that are previous to the unacknowledged number should be removed
-                this.sentQueue.RemoveAllBefore(segment.UnacknowledgedNumber);
+                this.sendingQueue.RemoveAllBefore(segment.UnacknowledgedNumber);
 
                 switch (segment.Command)
                 {
@@ -143,7 +143,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                             {
                             }
                             // this specific segment is acknowledged and should be removed
-                            this.sentQueue.Remove(segment.SequenceNumber);
+                            this.sendingQueue.Remove(segment.SequenceNumber);
                         }
                         break;
                     case Command.Push:
@@ -208,7 +208,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public void Send(Span<byte> data)
         {
-            this.sendingQueue.AddBuffer(data, this.MaxSegmentDataSize, this.isStreamMode);
+            this.toSendQueue.AddBuffer(data, this.MaxSegmentDataSize, this.isStreamMode);
         }
 
         public int Receive(Span<byte> buffer)
@@ -292,7 +292,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             // merge all segments into a single buffer
             while (true)
             {
-                LinkedListNode<KcpSegment> segmentNode = this.sendingQueue.GetFirstNode();
+                LinkedListNode<KcpSegment> segmentNode = this.toSendQueue.GetFirstNode();
                 if (segmentNode == null)
                 {
                     // no more segments to send
@@ -321,8 +321,8 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 numBytesAppended += segment.RawSegmentLength;
 
                 // the segment is then waiting for ack
-                this.sendingQueue.Remove(segmentNode);
-                this.sentQueue.Enqueue(segment);
+                this.toSendQueue.Remove(segmentNode);
+                this.sendingQueue.Enqueue(segment);
             }
 
             return numBytesAppended;
