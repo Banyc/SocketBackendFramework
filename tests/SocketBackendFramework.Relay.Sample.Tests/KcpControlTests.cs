@@ -41,7 +41,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
         }
 
         [Fact]
-        public void ApplicationBytesAreALilLong()
+        public void ApplicationBytesAreABitLong()
         {
             Random random = new Random();
             byte[] bigBuffer = new byte[1024 * 1024 * 10];
