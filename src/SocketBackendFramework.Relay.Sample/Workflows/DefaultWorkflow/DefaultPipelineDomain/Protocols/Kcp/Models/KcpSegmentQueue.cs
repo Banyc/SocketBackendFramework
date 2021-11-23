@@ -92,9 +92,9 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                     Command = Command.Push,
                     FragmentCount = isStreamMode ? (byte)0 : (byte)fragmentCount,
                 };
-                segment.Append(buffer[..numBytesToAppend]);
+                int numBytesAppended = segment.Append(buffer[..numBytesToAppend]);
                 this.Enqueue(segment);
-                buffer = buffer[numBytesToAppend..];
+                buffer = buffer[numBytesAppended..];
                 fragmentCount++;
             }
         }

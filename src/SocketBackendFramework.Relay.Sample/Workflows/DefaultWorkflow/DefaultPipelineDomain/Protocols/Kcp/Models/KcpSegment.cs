@@ -93,10 +93,10 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             set
             {
                 var segment = Buffer.Span[8..12];
-                segment[8] = (byte)(value & 0xff);
-                segment[9] = (byte)((value >> 8) & 0xff);
-                segment[10] = (byte)((value >> 16) & 0xff);
-                segment[11] = (byte)((value >> 24) & 0xff);
+                segment[0] = (byte)(value & 0xff);
+                segment[1] = (byte)((value >> 8) & 0xff);
+                segment[2] = (byte)((value >> 16) & 0xff);
+                segment[3] = (byte)((value >> 24) & 0xff);
             }
         }  // ts
         public uint SequenceNumber
@@ -108,10 +108,10 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             set
             {
                 var segment = Buffer.Span[12..16];
-                segment[12] = (byte)(value & 0xff);
-                segment[13] = (byte)((value >> 8) & 0xff);
-                segment[14] = (byte)((value >> 16) & 0xff);
-                segment[15] = (byte)((value >> 24) & 0xff);
+                segment[0] = (byte)(value & 0xff);
+                segment[1] = (byte)((value >> 8) & 0xff);
+                segment[2] = (byte)((value >> 16) & 0xff);
+                segment[3] = (byte)((value >> 24) & 0xff);
             }
         }  // sn
         public uint UnacknowledgedNumber
@@ -123,10 +123,10 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             set
             {
                 var segment = Buffer.Span[16..20];
-                segment[16] = (byte)(value & 0xff);
-                segment[17] = (byte)((value >> 8) & 0xff);
-                segment[18] = (byte)((value >> 16) & 0xff);
-                segment[19] = (byte)((value >> 24) & 0xff);
+                segment[0] = (byte)(value & 0xff);
+                segment[1] = (byte)((value >> 8) & 0xff);
+                segment[2] = (byte)((value >> 16) & 0xff);
+                segment[3] = (byte)((value >> 24) & 0xff);
             }
         }  // una
         public uint DataLength
@@ -138,10 +138,10 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             set
             {
                 var segment = Buffer.Span[20..24];
-                segment[20] = (byte)(value & 0xff);
-                segment[21] = (byte)((value >> 8) & 0xff);
-                segment[22] = (byte)((value >> 16) & 0xff);
-                segment[23] = (byte)((value >> 24) & 0xff);
+                segment[0] = (byte)(value & 0xff);
+                segment[1] = (byte)((value >> 8) & 0xff);
+                segment[2] = (byte)((value >> 16) & 0xff);
+                segment[3] = (byte)((value >> 24) & 0xff);
             }
         }  // len
         public Span<byte> Data
@@ -175,7 +175,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             Timestamp = 0;
             SequenceNumber = 0;
             UnacknowledgedNumber = 0;
-            DataLength = (uint)dataLength;
+            DataLength = 0;  // there is currently no data in the segment
         }
 
         public KcpSegment(byte[] buffer)

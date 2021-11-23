@@ -20,7 +20,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         private UInt32 conversationId;
         private UInt32 mtu = 1400;  // maximum transmission unit
-        private UInt32 maxSegmentDataSize;  // maximum segment size
+        private uint MaxSegmentDataSize { get => this.mtu - KcpSegment.DataOffset; }  // maximum segment size
 
         private uint FirstSentUnacknowledged
         {
@@ -37,7 +37,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 }
             }
         }  // snd_una
-        private uint nextSequenceNumberToSend;  // snd_nxt
+        private uint nextSequenceNumberToSend = 0;  // snd_nxt
 
         // window size (out-of-order queue size)
         private readonly uint sendWindowSize;  // snd_wnd
@@ -87,13 +87,13 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         private ProbeCommand probeCommand;  // probe
 
-        private bool isFastResend;
-        private bool isNoCwnd;
         private bool isStreamMode;
 
-        public KcpControl(uint conversationId)
+        public KcpControl(uint conversationId,
+                          bool isStreamMode)
         {
             this.conversationId = conversationId;
+            this.isStreamMode = isStreamMode;
         }
 
         public void Input(Span<byte> rawData)
@@ -102,6 +102,11 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
             while (true)
             {
+                if (rawData.Length == 0)
+                {
+                    // no more data
+                    break;
+                }
                 if (rawData.Length < KcpSegment.DataOffset)
                 {
                     throw new Exception("raw packet length is less than data offset");
@@ -204,7 +209,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public void Send(Span<byte> data)
         {
-            this.sendingQueue.AddBuffer(data, this.maxSegmentDataSize, this.isStreamMode);
+            this.sendingQueue.AddBuffer(data, this.MaxSegmentDataSize, this.isStreamMode);
         }
 
         public int Receive(Span<byte> buffer)
@@ -214,11 +219,12 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             while (true)
             {
                 LinkedListNode<KcpSegment> segmentNode = this.receivedQueue.GetFirstNode();
-                KcpSegment segment = segmentNode.Value;
-                if (segment == null)
+                if (segmentNode == null)
                 {
+                    // no more segments in received queue
                     break;
                 }
+                KcpSegment segment = segmentNode.Value;
 
                 if (numBytesAppended + segment.Data.Length > buffer.Length)
                 {
