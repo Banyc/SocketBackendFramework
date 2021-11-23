@@ -31,6 +31,8 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
     public class KcpSegment
     {
         public static uint DataOffset { get; } = 24;
+
+        // header + data + extra space
         public Memory<byte> Buffer { get; }
         public uint ConversationId
         {
@@ -127,7 +129,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 segment[19] = (byte)((value >> 24) & 0xff);
             }
         }  // una
-        public uint Length
+        public uint DataLength
         {
             get
             {
@@ -150,8 +152,18 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             }
         }
 
+        // header + data
+        public int RawSegmentLength { get => (int)DataOffset + (int)DataLength; }
+        public Span<byte> RawSegment
+        {
+            get
+            {
+                return Buffer.Span[..RawSegmentLength];
+            }
+        }
+
         // public KcpSegment(int bufferSize)
-        public KcpSegment(int dataLength)
+        public KcpSegment(uint dataLength)
         {
             // Buffer = new byte[bufferSize];
             Buffer = new byte[dataLength + (int)KcpSegment.DataOffset];
@@ -163,7 +175,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             Timestamp = 0;
             SequenceNumber = 0;
             UnacknowledgedNumber = 0;
-            Length = 0;
+            DataLength = (uint)dataLength;
         }
 
         public KcpSegment(byte[] buffer)
@@ -185,10 +197,10 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         // return the amount of data being appended to this segment
         public int Append(Span<byte> newData)
         {
-            var freeSpace = this.Data[(int)this.Length..];
+            var freeSpace = this.Data[(int)this.DataLength..];
             int numBytesToAppend = Math.Min(freeSpace.Length, newData.Length);
             newData[0..numBytesToAppend].CopyTo(freeSpace);
-            this.Length += (uint)numBytesToAppend;
+            this.DataLength += (uint)numBytesToAppend;
             return numBytesToAppend;
         }
     }
