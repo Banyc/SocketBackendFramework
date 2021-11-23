@@ -12,7 +12,21 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private readonly LinkedList<KcpSegment> queue = new();
 
         public uint NextContiguousSequenceNumber { get; private set; } = 0;
-        public uint PreviousSequenceNumber { get; private set; } = 0;
+        public uint SmallestSequenceNumberAllowed
+        {
+            get
+            {
+                uint? firstSequenceNumber = this.GetFirstSequenceNumber();
+                if (firstSequenceNumber == null)
+                {
+                    return this.NextContiguousSequenceNumber;
+                }
+                else
+                {
+                    return firstSequenceNumber.Value;
+                }
+            }
+        }  // the left inclusive boundary of the queue
 
         public KcpSegmentQueue()
         {
@@ -115,9 +129,6 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             }
             var segment = this.queue.First.Value;
             this.queue.RemoveFirst();
-
-            // record the previous sequence number
-            this.PreviousSequenceNumber = segment.SequenceNumber;
 
             return segment;
         }

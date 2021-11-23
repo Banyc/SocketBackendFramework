@@ -21,29 +21,13 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private readonly uint conversationId;
         public uint Mtu { get; set; } = 1400;  // maximum transmission unit
         private uint MaxSegmentDataSize { get => this.Mtu - KcpSegment.DataOffset; }  // maximum segment size
+        private TimeSpan RetransmissionTimeout { get; } = TimeSpan.FromSeconds(3);  // rto
 
-        private uint FirstSentUnacknowledged
-        {
-            get
-            {
-                uint? firstSentUnacknowledged = this.sendingQueue.GetFirstSequenceNumber();
-                if (firstSentUnacknowledged == null)
-                {
-                    return this.nextSequenceNumberToSend;
-                }
-                else
-                {
-                    return firstSentUnacknowledged.Value;
-                }
-            }
-        }  // snd_una
         private uint nextSequenceNumberToSend = 0;  // snd_nxt
 
         // window size (out-of-order queue size)
         private readonly uint receiveWindowSize;  // rcv_wnd  // out-of-order queue size
         private uint remoteWindowSize;
-
-        private uint congestionWindow;  // cwnd
 
         private uint CurrentTimestamp { get => (uint)(DateTime.Now.ToBinary() >> 32); }  // current
 
@@ -52,13 +36,6 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         // sent but unacked segments
         private readonly KcpSegmentQueue sendingQueue = new();  // snd_buf
-        private uint LastAckedSentSequenceNumber
-        {
-            get
-            {
-                return this.sendingQueue.PreviousSequenceNumber;
-            }
-        }
 
         // acked but out-of-order segments
         private readonly SortedDictionary<uint, KcpSegment> outOfOrderQueue = new();  // rcv_buf
@@ -248,7 +225,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         {
             // only stuff bytes within the limit of MTU
             buffer = buffer[..Math.Min(buffer.Length, (int)this.Mtu)];
-            
+
             int numBytesAppended = 0;
 
             // write ack segments
@@ -286,43 +263,70 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 }
             }
 
-
-
-            // write push segments
-            // merge all segments into a single buffer
+            // move just enough segments from toSend queue to sending queue
             while (true)
             {
-                LinkedListNode<KcpSegment> segmentNode = this.toSendQueue.GetFirstNode();
-                if (segmentNode == null)
+                uint? firstToSendSequenceNumber = this.toSendQueue.GetFirstSequenceNumber();
+                if (firstToSendSequenceNumber != null &&
+                    firstToSendSequenceNumber.Value - this.sendingQueue.SmallestSequenceNumberAllowed < this.remoteWindowSize)
                 {
-                    // no more segments to send
+                    var segment = this.toSendQueue.Dequeue();
+
+                    // initialize segment headers
+                    segment.ConversationId = this.conversationId;
+                    segment.Command = Command.Push;
+                    // segment.FragmentCount = segment.FragmentCount;
+                    segment.WindowSize = (ushort)this.SpaceLeftInOutOfOrderQueue;
+                    segment.UnacknowledgedNumber = this.NextContiguousSequenceNumberToReceive;
+                    // segment.DataLength = segment.DataLength;
+                    segment.SequenceNumber = this.nextSequenceNumberToSend++;
+                    segment.Timestamp = this.CurrentTimestamp;
+
+                    this.sendingQueue.Enqueue(segment);
+                }
+                else
+                {
                     break;
                 }
-                KcpSegment segment = segmentNode.Value;
+            }
 
-                if (numBytesAppended + segment.Buffer.Length > buffer.Length)
+            // write push segments
+            // merge all segments in sendingQueue into a single buffer
+            {
+                LinkedListNode<KcpSegment>? segmentNode = this.toSendQueue.GetFirstNode();
+                while (true)
                 {
-                    // not enough space in TX buffer to write the next segment
-                    break;
+                    if (segmentNode == null)
+                    {
+                        // no more segments to send
+                        break;
+                    }
+                    KcpSegment segment = segmentNode.Value;
+
+                    if (segment.LastSentTime != null &&
+                        DateTime.Now - segment.LastSentTime.Value < this.RetransmissionTimeout)
+                    {
+                        // this segment has been sent recently
+                        continue;
+                    }
+
+                    if (numBytesAppended + segment.Buffer.Length > buffer.Length)
+                    {
+                        // not enough space in TX buffer to write the next segment
+                        break;
+                    }
+
+                    // write TX buffer
+                    segment.RawSegment.CopyTo(buffer[numBytesAppended..]);
+                    numBytesAppended += segment.RawSegmentLength;
+
+                    // update segment last sent time
+                    segment.LastSentTime = DateTime.Now;
+
+                    // the segment is then waiting for ack
+
+                    segmentNode = segmentNode.Next;
                 }
-
-                // initialize segment headers
-                segment.ConversationId = this.conversationId;
-                segment.Command = Command.Push;
-                // segment.FragmentCount = segment.FragmentCount;
-                segment.WindowSize = (ushort)this.SpaceLeftInOutOfOrderQueue;
-                segment.UnacknowledgedNumber = this.NextContiguousSequenceNumberToReceive;
-                // segment.DataLength = segment.DataLength;
-                segment.SequenceNumber = this.nextSequenceNumberToSend++;
-                segment.Timestamp = this.CurrentTimestamp;
-
-                // write TX buffer
-                segment.RawSegment.CopyTo(buffer[numBytesAppended..]);
-                numBytesAppended += segment.RawSegmentLength;
-
-                // the segment is then waiting for ack
-                this.toSendQueue.Remove(segmentNode);
-                this.sendingQueue.Enqueue(segment);
             }
 
             return numBytesAppended;

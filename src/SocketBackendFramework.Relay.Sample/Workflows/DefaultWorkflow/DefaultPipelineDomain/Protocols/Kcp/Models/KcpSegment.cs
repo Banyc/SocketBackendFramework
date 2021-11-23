@@ -31,6 +31,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
     public class KcpSegment
     {
         public static uint DataOffset { get; } = 24;
+        public DateTime? LastSentTime { get; set; }
 
         // header + data + extra space
         public Memory<byte> Buffer { get; }
