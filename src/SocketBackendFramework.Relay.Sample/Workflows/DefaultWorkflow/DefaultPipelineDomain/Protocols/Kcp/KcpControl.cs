@@ -27,7 +27,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         // window size (out-of-order queue size)
         private readonly uint receiveWindowSize;  // rcv_wnd  // out-of-order queue size
-        private uint remoteWindowSize;
+        private uint remoteWindowSize = 0;
 
         private uint CurrentTimestamp { get => (uint)(DateTime.Now.ToBinary() >> 32); }  // current
 
@@ -204,6 +204,13 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
                 if (numBytesAppended + segment.Data.Length > buffer.Length)
                 {
+                    // the buffer is not large enough to hold all data
+                    break;
+                }
+
+                if (segment.FragmentCountLeft > this.receivedQueue.Count)
+                {
+                    // the segment is not complete
                     break;
                 }
 
@@ -268,7 +275,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             {
                 uint? firstToSendSequenceNumber = this.toSendQueue.GetFirstSequenceNumber();
                 if (firstToSendSequenceNumber != null &&
-                    firstToSendSequenceNumber.Value - this.sendingQueue.SmallestSequenceNumberAllowed < this.remoteWindowSize)
+                    firstToSendSequenceNumber.Value - this.sendingQueue.SmallestSequenceNumberAllowed < Math.Max(this.remoteWindowSize, 1))
                 {
                     var segment = this.toSendQueue.Dequeue();
 
@@ -293,7 +300,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             // write push segments
             // merge all segments in sendingQueue into a single buffer
             {
-                LinkedListNode<KcpSegment>? segmentNode = this.toSendQueue.GetFirstNode();
+                LinkedListNode<KcpSegment>? segmentNode = this.sendingQueue.GetFirstNode();
                 while (true)
                 {
                     if (segmentNode == null)
@@ -307,23 +314,25 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                         DateTime.Now - segment.LastSentTime.Value < this.RetransmissionTimeout)
                     {
                         // this segment has been sent recently
-                        continue;
+                        // do not `continue` here!
                     }
-
-                    if (numBytesAppended + segment.Buffer.Length > buffer.Length)
+                    else
                     {
-                        // not enough space in TX buffer to write the next segment
-                        break;
+                        if (numBytesAppended + segment.Buffer.Length > buffer.Length)
+                        {
+                            // not enough space in TX buffer to write the next segment
+                            break;
+                        }
+
+                        // write TX buffer
+                        segment.RawSegment.CopyTo(buffer[numBytesAppended..]);
+                        numBytesAppended += segment.RawSegmentLength;
+
+                        // update segment last sent time
+                        segment.LastSentTime = DateTime.Now;
+
+                        // the segment is then waiting for ack
                     }
-
-                    // write TX buffer
-                    segment.RawSegment.CopyTo(buffer[numBytesAppended..]);
-                    numBytesAppended += segment.RawSegmentLength;
-
-                    // update segment last sent time
-                    segment.LastSentTime = DateTime.Now;
-
-                    // the segment is then waiting for ack
 
                     segmentNode = segmentNode.Next;
                 }

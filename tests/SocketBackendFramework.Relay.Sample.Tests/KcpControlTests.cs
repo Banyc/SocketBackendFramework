@@ -31,7 +31,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             writtenDataSize = kcpControl_2.Output(bufferSpan);
             Assert.Equal((int)KcpSegment.DataOffset, writtenDataSize);
             kcpControl_1.Input(bufferSpan[..writtenDataSize]);
-            
+
             // get application bytes
             byte[] receivedApplicationBytes = new byte[1024 * 1024 * 10];
             int receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);
@@ -47,8 +47,8 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             byte[] bigBuffer = new byte[1024 * 1024 * 10];
             int writtenDataSize;
             Span<byte> bufferSpan = bigBuffer.AsSpan();
-            KcpControl kcpControl_1 = new KcpControl(0x1, false, 0);
-            KcpControl kcpControl_2 = new KcpControl(0x1, false, 0);
+            KcpControl kcpControl_1 = new KcpControl(0x1, false, 3);
+            KcpControl kcpControl_2 = new KcpControl(0x1, false, 3);
 
             byte[] applicationBytes = new byte[kcpControl_1.Mtu * 2];
             random.NextBytes(applicationBytes);
@@ -57,6 +57,14 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             kcpControl_1.Send(applicationBytes);
             writtenDataSize = kcpControl_1.Output(bufferSpan);
             kcpControl_2.Input(bufferSpan[..writtenDataSize]);
+
+            // ack
+            // let kcpControl_2 update the window size for kcpControl_1
+            writtenDataSize = kcpControl_2.Output(bufferSpan);
+            Assert.Equal((int)KcpSegment.DataOffset * 1, writtenDataSize);
+            kcpControl_1.Input(bufferSpan[..writtenDataSize]);
+
+            // send the rest of the application bytes
             writtenDataSize = kcpControl_1.Output(bufferSpan);
             kcpControl_2.Input(bufferSpan[..writtenDataSize]);
             writtenDataSize = kcpControl_1.Output(bufferSpan);
@@ -64,9 +72,9 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
 
             // ack
             writtenDataSize = kcpControl_2.Output(bufferSpan);
-            Assert.Equal((int)KcpSegment.DataOffset * 3, writtenDataSize);
+            Assert.Equal((int)KcpSegment.DataOffset * 2, writtenDataSize);
             kcpControl_1.Input(bufferSpan[..writtenDataSize]);
-            
+
             // get application bytes
             byte[] receivedApplicationBytes = new byte[1024 * 1024 * 10];
             int receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);

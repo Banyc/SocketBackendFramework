@@ -27,6 +27,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 }
             }
         }  // the left inclusive boundary of the queue
+        public int Count { get => this.queue.Count; }
 
         public KcpSegmentQueue()
         {
@@ -95,22 +96,21 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             }
 
             // then segment the remaining buffer into KCP segments
-            int fragmentCount = 0;
+            int fragmentCountLeft = (int)Math.Ceiling((double)buffer.Length / maxSegmentDataSize);
             while (buffer.Length > 0)
             {
                 int numBytesToAppend = Math.Min(buffer.Length, (int)maxSegmentDataSize);
                 int segmentDataSize = isStreamMode ? (int)maxSegmentDataSize : numBytesToAppend;
                 System.Diagnostics.Debug.Assert(segmentDataSize > 0);
-                byte fragmentCountLeft = (byte)(byte.MaxValue - Math.Min(fragmentCount, byte.MaxValue));
                 KcpSegment segment = new KcpSegment((uint)segmentDataSize)
                 {
                     Command = Command.Push,
-                    FragmentCountLeft = isStreamMode ? (byte)0 : fragmentCountLeft,
+                    FragmentCountLeft = isStreamMode ? (byte)0 : (byte)Math.Min(fragmentCountLeft, byte.MaxValue),
                 };
                 int numBytesAppended = segment.Append(buffer[..numBytesToAppend]);
                 this.Enqueue(segment);
                 buffer = buffer[numBytesAppended..];
-                fragmentCount++;
+                fragmentCountLeft--;
             }
         }
 
