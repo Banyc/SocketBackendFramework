@@ -19,10 +19,10 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             KcpControl kcpControl_1 = new KcpControl(0x1, false);
             KcpControl kcpControl_2 = new KcpControl(0x1, false);
 
-            // System.Text.Encoding.UTF8.GetBytes("hello world", bufferSpan);
             string applicationString = "hello world";
             byte[] applicationBytes = System.Text.Encoding.UTF8.GetBytes(applicationString);
 
+            // send application bytes
             kcpControl_1.Send(applicationBytes);
             writtenDataSize = kcpControl_1.Output(bufferSpan);
             kcpControl_2.Input(bufferSpan[..writtenDataSize]);
@@ -32,7 +32,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             Assert.Equal((int)KcpSegment.DataOffset, writtenDataSize);
             kcpControl_1.Input(bufferSpan[..writtenDataSize]);
             
-            // get application messsage
+            // get application bytes
             byte[] receivedApplicationBytes = new byte[1024 * 1024 * 10];
             int receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);
             string receivedApplicationString = System.Text.Encoding.UTF8.GetString(receivedApplicationBytes.AsSpan()[..receivedApplicationByteSize]);
