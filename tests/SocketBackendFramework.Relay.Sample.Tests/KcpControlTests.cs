@@ -39,5 +39,39 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
 
             Assert.Equal(applicationString, receivedApplicationString);
         }
+
+        [Fact]
+        public void ApplicationBytesAreALilLong()
+        {
+            Random random = new Random();
+            byte[] bigBuffer = new byte[1024 * 1024 * 10];
+            int writtenDataSize;
+            Span<byte> bufferSpan = bigBuffer.AsSpan();
+            KcpControl kcpControl_1 = new KcpControl(0x1, false);
+            KcpControl kcpControl_2 = new KcpControl(0x1, false);
+
+            byte[] applicationBytes = new byte[kcpControl_1.Mtu * 2];
+            random.NextBytes(applicationBytes);
+
+            // send application bytes
+            kcpControl_1.Send(applicationBytes);
+            writtenDataSize = kcpControl_1.Output(bufferSpan);
+            kcpControl_2.Input(bufferSpan[..writtenDataSize]);
+            writtenDataSize = kcpControl_1.Output(bufferSpan);
+            kcpControl_2.Input(bufferSpan[..writtenDataSize]);
+            writtenDataSize = kcpControl_1.Output(bufferSpan);
+            kcpControl_2.Input(bufferSpan[..writtenDataSize]);
+
+            // ack
+            writtenDataSize = kcpControl_2.Output(bufferSpan);
+            Assert.Equal((int)KcpSegment.DataOffset * 3, writtenDataSize);
+            kcpControl_1.Input(bufferSpan[..writtenDataSize]);
+            
+            // get application bytes
+            byte[] receivedApplicationBytes = new byte[1024 * 1024 * 10];
+            int receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);
+
+            Assert.True(applicationBytes.AsSpan().SequenceEqual(receivedApplicationBytes.AsSpan()[..receivedApplicationByteSize]));
+        }
     }
 }

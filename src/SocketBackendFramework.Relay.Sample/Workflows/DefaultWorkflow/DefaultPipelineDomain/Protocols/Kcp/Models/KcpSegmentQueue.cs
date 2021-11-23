@@ -87,10 +87,11 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 int numBytesToAppend = Math.Min(buffer.Length, (int)maxSegmentDataSize);
                 int segmentDataSize = isStreamMode ? (int)maxSegmentDataSize : numBytesToAppend;
                 System.Diagnostics.Debug.Assert(segmentDataSize > 0);
+                byte fragmentCountLeft = (byte)(byte.MaxValue - Math.Min(fragmentCount, byte.MaxValue));
                 KcpSegment segment = new KcpSegment((uint)segmentDataSize)
                 {
                     Command = Command.Push,
-                    FragmentCount = isStreamMode ? (byte)0 : (byte)fragmentCount,
+                    FragmentCountLeft = isStreamMode ? (byte)0 : fragmentCountLeft,
                 };
                 int numBytesAppended = segment.Append(buffer[..numBytesToAppend]);
                 this.Enqueue(segment);

@@ -19,8 +19,8 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         }
 
         private UInt32 conversationId;
-        private UInt32 mtu = 1400;  // maximum transmission unit
-        private uint MaxSegmentDataSize { get => this.mtu - KcpSegment.DataOffset; }  // maximum segment size
+        public uint Mtu { get; set; } = 1400;  // maximum transmission unit
+        private uint MaxSegmentDataSize { get => this.Mtu - KcpSegment.DataOffset; }  // maximum segment size
 
         private uint FirstSentUnacknowledged
         {
@@ -214,8 +214,8 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public int Receive(Span<byte> buffer)
         {
-            // merge all segments into a single buffer
             int numBytesAppended = 0;
+            // merge all segments into a single buffer
             while (true)
             {
                 LinkedListNode<KcpSegment> segmentNode = this.receivedQueue.GetFirstNode();
@@ -235,13 +235,21 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 numBytesAppended += segment.Data.Length;
 
                 this.receivedQueue.Remove(segmentNode);
-            }
 
+                if (segment.FragmentCountLeft == 0)
+                {
+                    // this is the last segment/fragment of the packet
+                    break;
+                }
+            }
             return numBytesAppended;
         }
 
         public int Output(Span<byte> buffer)
         {
+            // only stuff bytes within the limit of MTU
+            buffer = buffer[..Math.Min(buffer.Length, (int)this.Mtu)];
+            
             int numBytesAppended = 0;
 
             // write ack segments
@@ -260,7 +268,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                     {
                         ConversationId = this.conversationId,
                         Command = Command.Ack,
-                        FragmentCount = 0,
+                        FragmentCountLeft = 0,
                         WindowSize = (ushort)this.SpaceLeftInOutOfOrderQueue,
                         UnacknowledgedNumber = this.NextContiguousSequenceNumberToReceive,
                         DataLength = 0,

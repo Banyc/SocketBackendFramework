@@ -60,7 +60,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 Buffer.Span[4] = (byte)value;
             }
         }  // cmd
-        public byte FragmentCount
+        public byte FragmentCountLeft
         {
             get
             {
@@ -168,7 +168,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
             ConversationId = 0;
             Command = Command.Push;
-            FragmentCount = 0;
+            FragmentCountLeft = 0;
             WindowSize = 0;
             Timestamp = 0;
             SequenceNumber = 0;
