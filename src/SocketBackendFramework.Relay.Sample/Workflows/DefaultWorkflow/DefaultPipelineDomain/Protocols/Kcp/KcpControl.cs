@@ -46,7 +46,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         private uint congestionWindow;  // cwnd
 
-        private uint currentTimestamp;  // current
+        private uint CurrentTimestamp { get => (uint)(DateTime.Now.ToBinary() >> 32); }  // current
 
         // unsent segments
         private readonly KcpSegmentQueue sendingQueue = new();  // snd_queue
@@ -135,7 +135,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 {
                     case Command.Ack:
                         {
-                            if (this.currentTimestamp >= segment.Timestamp)
+                            if (this.CurrentTimestamp >= segment.Timestamp)
                             {
                             }
                             // this specific segment is acknowledged and should be removed
@@ -301,7 +301,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 segment.UnacknowledgedNumber = this.NextContiguousSequenceNumberToReceive;
                 // segment.DataLength = segment.DataLength;
                 segment.SequenceNumber = this.nextSequenceNumberToSend++;
-                segment.Timestamp = this.currentTimestamp;
+                segment.Timestamp = this.CurrentTimestamp;
 
                 // write TX buffer
                 segment.RawSegment.CopyTo(buffer[numBytesAppended..]);
