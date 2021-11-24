@@ -4,12 +4,6 @@ using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipel
 
 namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Protocols.Kcp
 {
-    public enum ProbeCommand
-    {
-        WindowProbe = 1 << 0,
-        WindowSize = 1 << 1,
-    }
-
     public class KcpControl
     {
         private struct SequenceNumberTimestampPair
