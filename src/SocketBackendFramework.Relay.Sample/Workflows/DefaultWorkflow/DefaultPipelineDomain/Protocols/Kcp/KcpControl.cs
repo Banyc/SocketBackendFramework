@@ -65,7 +65,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private bool isStreamMode;
         private bool isNoDelayAck;
         private readonly Action<byte[], int>? outputCallback;
-        private readonly Timer? transmissionTimer;
+        private Timer? transmissionTimer;
 
         public event EventHandler? TryingOutput;
 
@@ -107,7 +107,8 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 lock (this)
                 {
                     this.TryOutputAll();
-                    this.transmissionTimer.Start();
+                    // the timer could have already been disposed before the lock was acquired
+                    this.transmissionTimer?.Start();
                 }
             };
 
@@ -120,6 +121,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             {
                 this.transmissionTimer?.Stop();
                 this.transmissionTimer?.Dispose();
+                this.transmissionTimer = null;
             }
             GC.SuppressFinalize(this);
         }
