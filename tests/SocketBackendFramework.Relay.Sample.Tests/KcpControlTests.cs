@@ -16,8 +16,8 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             byte[] bigBuffer = new byte[1024 * 1024 * 10];
             int writtenDataSize;
             Span<byte> bufferSpan = bigBuffer.AsSpan();
-            KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 0, isNoDelayAck: false);
-            KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 0, isNoDelayAck: false);
+            using KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 0, isNoDelayAck: false);
+            using KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 0, isNoDelayAck: false);
 
             string applicationString = "hello world";
             byte[] applicationBytes = System.Text.Encoding.UTF8.GetBytes(applicationString);
@@ -41,14 +41,74 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
         }
 
         [Fact]
+        public async Task Test1WithEventHandlingAsync()
+        {
+            using KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 0, isNoDelayAck: false);
+            using KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 0, isNoDelayAck: false);
+
+            kcpControl_1.TryingOutput += (sender, e) =>
+            {
+                Console.WriteLine($"kcpControl_1.TryingOutput");
+                while (true)
+                {
+                    byte[] bigBuffer = new byte[kcpControl_1.Mtu];
+                    Span<byte> bufferSpan = bigBuffer.AsSpan();
+                    // must be declared in the loop so that the value in the new thread will not be altered
+                    int writtenDataSize = kcpControl_1.Output(bufferSpan);
+                    if (writtenDataSize <= 0)
+                    {
+                        break;
+                    }
+                    // this scope is locked by kcpControl_1
+                    // new thread is to excape the lock
+                    Task.Run(() => {
+                        System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize}");
+                        kcpControl_2.Input(bigBuffer.AsSpan()[..writtenDataSize]);});
+                }
+            };
+            kcpControl_2.TryingOutput += (sender, e) =>
+            {
+                Console.WriteLine($"kcpControl_2.TryingOutput");
+                while (true)
+                {
+                    byte[] bigBuffer = new byte[kcpControl_2.Mtu];
+                    Span<byte> bufferSpan = bigBuffer.AsSpan();
+                    int writtenDataSize = kcpControl_2.Output(bufferSpan);
+                    if (writtenDataSize <= 0)
+                    {
+                        break;
+                    }
+                    Task.Run(() => {
+                        System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize}");
+                        kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);});
+                }
+            };
+
+            string applicationString = "hello world";
+            byte[] applicationBytes = System.Text.Encoding.UTF8.GetBytes(applicationString);
+
+            // kcpControl_1 sends application bytes
+            kcpControl_1.Send(applicationBytes);
+
+            await Task.Delay(100);
+
+            // kcpControl_2 gets application bytes
+            byte[] receivedApplicationBytes = new byte[1024 * 1024 * 10];
+            int receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);
+            string receivedApplicationString = System.Text.Encoding.UTF8.GetString(receivedApplicationBytes.AsSpan()[..receivedApplicationByteSize]);
+
+            Assert.Equal(applicationString, receivedApplicationString);
+        }
+
+        [Fact]
         public void ApplicationBytesAreABitLong()
         {
             Random random = new Random();
             byte[] bigBuffer = new byte[1024 * 1024 * 10];
             int writtenDataSize;
             Span<byte> bufferSpan = bigBuffer.AsSpan();
-            KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false);
-            KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false);
+            using KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false);
+            using KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false);
 
             // it requires kcpControl_1 to send three segments
             byte[] applicationBytes = new byte[kcpControl_1.Mtu * 2];
