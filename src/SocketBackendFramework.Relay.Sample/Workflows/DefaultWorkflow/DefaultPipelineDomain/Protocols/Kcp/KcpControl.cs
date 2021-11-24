@@ -73,7 +73,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                           bool isNoDelayAck,
                           TimeSpan? retransmissionTimeout = null,
                           TimeSpan? outputDuration = null,
-                          Action<byte[], int> outputCallback = null)  // onOutput(byte[] data, int length)
+                          Action<byte[], int>? outputCallback = null)  // onOutput(byte[] data, int length)
         {
             this.conversationId = conversationId;
             this.isStreamMode = isStreamMode;
@@ -114,6 +114,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         public void Dispose()
         {
             this.transmissionTimer?.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         public void Input(Span<byte> rawData)
@@ -196,8 +197,9 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                             });
 
                             // if the next consecutive segments is in the out-of-order queue, add them to the received queue
-                            while (this.outOfOrderQueue.TryGetValue(this.NextContiguousSequenceNumberToReceive, out KcpSegment nextSegment))
+                            while (this.outOfOrderQueue.TryGetValue(this.NextContiguousSequenceNumberToReceive, out KcpSegment? nextSegment))
                             {
+                                System.Diagnostics.Debug.Assert(nextSegment != null);
                                 this.outOfOrderQueue.Remove(this.NextContiguousSequenceNumberToReceive);
                                 this.receivedQueue.Enqueue(nextSegment);
                             }
