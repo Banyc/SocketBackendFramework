@@ -28,6 +28,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             }
         }  // the left inclusive boundary of the queue
         public int Count { get => this.queue.Count; }
+        public int TotalByteCount { get; private set; } = 0;
 
         public KcpSegmentQueue()
         {
@@ -42,6 +43,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 if (item.Value.SequenceNumber < sequenceNumber)
                 {
                     this.queue.Remove(item);
+                    this.TotalByteCount -= (int)item.Value.DataLength + (int)KcpSegment.DataOffset;
                 }
                 else
                 {
@@ -60,6 +62,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 if (item.Value.SequenceNumber == sequenceNumber)
                 {
                     this.queue.Remove(item);
+                    this.TotalByteCount -= (int)item.Value.DataLength + (int)KcpSegment.DataOffset;
                     break;
                 }
                 if (item.Value.SequenceNumber > sequenceNumber)
@@ -88,6 +91,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 this.queue.Last!.Value.DataLength + buffer.Length <= maxSegmentDataSize)
             {
                 int numBytesAppended = this.queue.Last.Value.Append(buffer);
+                this.TotalByteCount += numBytesAppended;
                 if (numBytesAppended == buffer.Length)
                 {
                     return;
@@ -109,6 +113,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 };
                 int numBytesAppended = segment.Append(buffer[..numBytesToAppend]);
                 this.Enqueue(segment);
+                this.TotalByteCount += numBytesAppended + (int)KcpSegment.DataOffset;
                 buffer = buffer[numBytesAppended..];
                 fragmentCountLeft--;
             }
@@ -117,6 +122,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         public void Enqueue(KcpSegment segment)
         {
             this.queue.AddLast(segment);
+            this.TotalByteCount += (int)segment.DataLength + (int)KcpSegment.DataOffset;
 
             // update the next contiguous sequence number
             this.NextContiguousSequenceNumber = segment.SequenceNumber + 1;
@@ -129,6 +135,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             }
             var segment = this.queue.First.Value;
             this.queue.RemoveFirst();
+            this.TotalByteCount -= (int)segment.DataLength + (int)KcpSegment.DataOffset;
 
             return segment;
         }

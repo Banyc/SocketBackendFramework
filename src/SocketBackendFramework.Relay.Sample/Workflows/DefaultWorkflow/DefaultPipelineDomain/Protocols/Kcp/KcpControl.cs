@@ -29,7 +29,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private readonly uint receiveWindowSize;  // rcv_wnd  // out-of-order queue size
         private uint remoteWindowSize = 0;
 
-        private uint CurrentTimestamp { get => (uint)(DateTime.Now.ToBinary() >> 32); }  // current
+        private static uint CurrentTimestamp { get => (uint)(DateTime.Now.ToBinary() >> 32); }  // current
 
         // unsent segments
         private readonly KcpSegmentQueue toSendQueue = new();  // snd_queue
@@ -58,20 +58,27 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             }
         }
 
+        private bool IsFitInSendingQueue(uint sequenceNumber)
+        {
+            // even if the remote window size is 0, we still send one segment to probe the updated remote window size
+            return sequenceNumber - this.sendingQueue.SmallestSequenceNumberAllowed < Math.Max(this.remoteWindowSize, 1);
+        }
+
         // sequence numbers to ack
         private readonly LinkedList<SequenceNumberTimestampPair> pendingAckList = new();  // ack list
 
-        private ProbeCommand probeCommand;  // probe
-
         private bool isStreamMode;
+        private readonly Action<byte[], int>? outputCallback;
 
         public KcpControl(uint conversationId,
                           bool isStreamMode,
-                          uint receiveWindowSize)
+                          uint receiveWindowSize,
+                          Action<byte[], int> outputCallback = null)  // onOutput(byte[] data, int length)
         {
             this.conversationId = conversationId;
             this.isStreamMode = isStreamMode;
             this.receiveWindowSize = receiveWindowSize;
+            this.outputCallback = outputCallback;
         }
 
         public void Input(Span<byte> rawData)
@@ -183,6 +190,27 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         public void Send(Span<byte> data)
         {
             this.toSendQueue.AddBuffer(data, this.MaxSegmentDataSize, this.isStreamMode);
+
+            // check if MTU is reached and good to transmit bytes
+            uint firstSequenceNumber = this.nextSequenceNumberToSend;
+            uint lastSequenceNumber = this.nextSequenceNumberToSend + (uint)this.toSendQueue.Count - 1;
+            if (this.outputCallback != null &&
+                this.IsFitInSendingQueue(firstSequenceNumber) &&  // sending queue is not full
+                (
+                    this.toSendQueue.TotalByteCount >= this.Mtu ||  // MTU is reached
+                    !this.IsFitInSendingQueue(lastSequenceNumber + 1)))  // to fully fill the sending queue
+            {
+                int txDataSize;
+                do
+                {
+                    byte[] txData = new byte[this.Mtu];
+                    txDataSize = this.Output(txData);
+                    if (txDataSize > 0)
+                    {
+                        this.outputCallback(txData, txDataSize);
+                    }
+                } while (txDataSize > 0);
+            }
         }
 
         public int Receive(Span<byte> buffer)
@@ -233,6 +261,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             int numBytesAppended = 0;
 
             // write ack segments
+            // piggyback ack segments
             {
                 var node = this.pendingAckList.First;
                 while (node != null)
@@ -272,7 +301,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             {
                 uint? firstToSendSequenceNumber = this.toSendQueue.GetFirstSequenceNumber();
                 if (firstToSendSequenceNumber != null &&
-                    firstToSendSequenceNumber.Value - this.sendingQueue.SmallestSequenceNumberAllowed < Math.Max(this.remoteWindowSize, 1))
+                    this.IsFitInSendingQueue(firstToSendSequenceNumber.Value))
                 {
                     var segment = this.toSendQueue.Dequeue();
 
@@ -284,7 +313,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                     segment.UnacknowledgedNumber = this.NextContiguousSequenceNumberToReceive;
                     // segment.DataLength = segment.DataLength;
                     segment.SequenceNumber = this.nextSequenceNumberToSend++;
-                    segment.Timestamp = this.CurrentTimestamp;
+                    segment.Timestamp = CurrentTimestamp;
 
                     this.sendingQueue.Enqueue(segment);
                 }
