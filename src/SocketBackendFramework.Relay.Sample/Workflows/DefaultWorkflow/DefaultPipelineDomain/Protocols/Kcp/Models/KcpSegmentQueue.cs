@@ -127,12 +127,13 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             // update the next contiguous sequence number
             this.NextContiguousSequenceNumber = segment.SequenceNumber + 1;
         }
-        public KcpSegment Dequeue()
+        public KcpSegment? Dequeue()
         {
             if (this.queue.Count == 0)
             {
                 return null;
             }
+            System.Diagnostics.Debug.Assert(this.queue.First != null);
             var segment = this.queue.First.Value;
             this.queue.RemoveFirst();
             this.TotalByteCount -= (int)segment.DataLength + (int)KcpSegment.DataOffset;
@@ -146,6 +147,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             {
                 return null;
             }
+            System.Diagnostics.Debug.Assert(this.queue.First != null);
             return this.queue.First.Value.SequenceNumber;
         }
         public uint? GetLastSequenceNumber()
@@ -154,9 +156,10 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             {
                 return null;
             }
+            System.Diagnostics.Debug.Assert(this.queue.Last != null);
             return this.queue.Last.Value.SequenceNumber;
         }
-        public LinkedListNode<KcpSegment> GetFirstNode()
+        public LinkedListNode<KcpSegment>? GetFirstNode()
         {
             if (this.queue.Count == 0)
             {
@@ -164,7 +167,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             }
             return this.queue.First;
         }
-        public LinkedListNode<KcpSegment> GetLastNode()
+        public LinkedListNode<KcpSegment>? GetLastNode()
         {
             if (this.queue.Count == 0)
             {

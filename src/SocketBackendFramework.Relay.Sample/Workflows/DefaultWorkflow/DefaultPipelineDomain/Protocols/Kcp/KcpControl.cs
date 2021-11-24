@@ -225,7 +225,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                         {
                             throw new Exception("segment command is not valid");
                         }
-                        break;
+                        // break;
                 }
             }
         }
@@ -253,7 +253,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             // merge all segments into a single buffer
             while (true)
             {
-                LinkedListNode<KcpSegment> segmentNode = this.receivedQueue.GetFirstNode();
+                LinkedListNode<KcpSegment>? segmentNode = this.receivedQueue.GetFirstNode();
                 if (segmentNode == null)
                 {
                     // no more segments in received queue
@@ -338,6 +338,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                     this.IsFitInSendingQueue(firstToSendSequenceNumber.Value))
                 {
                     var segment = this.toSendQueue.Dequeue();
+                    System.Diagnostics.Debug.Assert(segment != null);
 
                     // initialize segment headers
                     segment.ConversationId = this.conversationId;
