@@ -16,8 +16,8 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             byte[] bigBuffer = new byte[1024 * 1024 * 10];
             int writtenDataSize;
             Span<byte> bufferSpan = bigBuffer.AsSpan();
-            KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 0);
-            KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 0);
+            KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 0, isNoDelayAck: false);
+            KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 0, isNoDelayAck: false);
 
             string applicationString = "hello world";
             byte[] applicationBytes = System.Text.Encoding.UTF8.GetBytes(applicationString);
@@ -47,8 +47,8 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             byte[] bigBuffer = new byte[1024 * 1024 * 10];
             int writtenDataSize;
             Span<byte> bufferSpan = bigBuffer.AsSpan();
-            KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3);
-            KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3);
+            KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false);
+            KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false);
 
             // it requires kcpControl_1 to send three segments
             byte[] applicationBytes = new byte[kcpControl_1.Mtu * 2];

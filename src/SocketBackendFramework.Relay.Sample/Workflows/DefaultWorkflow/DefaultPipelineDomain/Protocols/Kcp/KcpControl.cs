@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Timers;
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Protocols.Kcp.Models;
 
 namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Protocols.Kcp
 {
-    public class KcpControl
+    public class KcpControl : IDisposable
     {
         private struct SequenceNumberTimestampPair
         {
@@ -62,17 +63,57 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private readonly LinkedList<SequenceNumberTimestampPair> pendingAckList = new();  // ack list
 
         private bool isStreamMode;
+        private bool isNoDelayAck;
         private readonly Action<byte[], int>? outputCallback;
+        private readonly Timer? transmissionTimer;
 
         public KcpControl(uint conversationId,
                           bool isStreamMode,
                           uint receiveWindowSize,
+                          bool isNoDelayAck,
+                          TimeSpan? retransmissionTimeout = null,
+                          TimeSpan? outputDuration = null,
                           Action<byte[], int> outputCallback = null)  // onOutput(byte[] data, int length)
         {
             this.conversationId = conversationId;
             this.isStreamMode = isStreamMode;
             this.receiveWindowSize = receiveWindowSize;
+            this.isNoDelayAck = isNoDelayAck;
+            if (retransmissionTimeout != null)
+            {
+                this.RetransmissionTimeout = retransmissionTimeout.Value;
+            }
+            else
+            {
+                this.RetransmissionTimeout = TimeSpan.FromSeconds(3);
+            }
+
+            // output callback
             this.outputCallback = outputCallback;
+            if (outputCallback != null)
+            {
+                if (outputDuration != null)
+                {
+                    this.transmissionTimer = new Timer(outputDuration.Value.TotalMilliseconds);
+                }
+                else
+                {
+                    this.transmissionTimer = new Timer(10);
+                }
+                this.transmissionTimer.AutoReset = false;
+                this.transmissionTimer.Elapsed += (sender, e) =>
+                {
+                    this.TryOutputAll();
+                    this.transmissionTimer.Start();
+                };
+            }
+
+            this.transmissionTimer?.Start();
+        }
+
+        public void Dispose()
+        {
+            this.transmissionTimer?.Dispose();
         }
 
         public void Input(Span<byte> rawData)
@@ -160,6 +201,12 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                 this.outOfOrderQueue.Remove(this.NextContiguousSequenceNumberToReceive);
                                 this.receivedQueue.Enqueue(nextSegment);
                             }
+
+                            if (this.isNoDelayAck)
+                            {
+                                // send ack immediately
+                                this.TryOutputAll();
+                            }
                         }
                         break;
                     case Command.WindowProbe:
@@ -194,16 +241,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                     this.toSendQueue.TotalByteCount >= this.Mtu ||  // MTU is reached
                     !this.IsFitInSendingQueue(lastSequenceNumber + 1)))  // to fully fill the sending queue
             {
-                int txDataSize;
-                do
-                {
-                    byte[] txData = new byte[this.Mtu];
-                    txDataSize = this.Output(txData);
-                    if (txDataSize > 0)
-                    {
-                        this.outputCallback(txData, txDataSize);
-                    }
-                } while (txDataSize > 0);
+                this.TryOutputAll();
             }
         }
 
@@ -359,6 +397,24 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             }
 
             return numBytesAppended;
+        }
+
+        private void TryOutputAll()
+        {
+            if (this.outputCallback == null)
+            {
+                return;
+            }
+            int txDataSize;
+            do
+            {
+                byte[] txData = new byte[this.Mtu];
+                txDataSize = this.Output(txData);
+                if (txDataSize > 0)
+                {
+                    this.outputCallback(txData, txDataSize);
+                }
+            } while (txDataSize > 0);
         }
     }
 }
