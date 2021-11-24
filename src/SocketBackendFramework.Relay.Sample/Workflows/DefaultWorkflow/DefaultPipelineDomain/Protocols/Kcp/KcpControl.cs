@@ -67,6 +67,8 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private readonly Action<byte[], int>? outputCallback;
         private readonly Timer? transmissionTimer;
 
+        public event EventHandler? TryingOutput;
+
         public KcpControl(uint conversationId,
                           bool isStreamMode,
                           uint receiveWindowSize,
@@ -404,6 +406,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         private void TryOutputAll()
         {
+            this.TryingOutput?.Invoke(this, EventArgs.Empty);
             if (this.outputCallback == null)
             {
                 return;
