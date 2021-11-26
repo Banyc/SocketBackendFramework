@@ -103,6 +103,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             int fragmentCountLeft = (int)Math.Ceiling((double)buffer.Length / maxSegmentDataSize);
             while (buffer.Length > 0)
             {
+                fragmentCountLeft--;
                 int numBytesToAppend = Math.Min(buffer.Length, (int)maxSegmentDataSize);
                 int segmentDataSize = isStreamMode ? (int)maxSegmentDataSize : numBytesToAppend;
                 System.Diagnostics.Debug.Assert(segmentDataSize > 0);
@@ -115,7 +116,6 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 this.Enqueue(segment);
                 this.TotalByteCount += numBytesAppended + (int)KcpSegment.DataOffset;
                 buffer = buffer[numBytesAppended..];
-                fragmentCountLeft--;
             }
         }
 
