@@ -187,6 +187,13 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                     continue;
                                 }
 
+                                // pending to ack
+                                this.pendingAckList.AddLast(new SequenceNumberTimestampPair()
+                                {
+                                    SequenceNumber = segment.SequenceNumber,
+                                    Timestamp = segment.Timestamp,
+                                });
+
                                 // discard duplicate segments
                                 if (segment.SequenceNumber < this.NextContiguousSequenceNumberToReceive)
                                 {
@@ -217,13 +224,6 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                     // implicitly discard duplicate segments
                                     this.outOfOrderQueue[segment.SequenceNumber] = segment;
                                 }
-
-                                // pending to ack
-                                this.pendingAckList.AddLast(new SequenceNumberTimestampPair()
-                                {
-                                    SequenceNumber = segment.SequenceNumber,
-                                    Timestamp = segment.Timestamp,
-                                });
 
                                 // if the next consecutive segments is in the out-of-order queue, add them to the received queue
                                 while (this.outOfOrderQueue.TryGetValue(this.NextContiguousSequenceNumberToReceive, out KcpSegment? nextSegment))

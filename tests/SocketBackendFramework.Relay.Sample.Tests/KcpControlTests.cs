@@ -370,7 +370,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                 kcpControl_1.Send(applicationBytes);
             }
 
-            await Task.Delay(10000);
+            await Task.Delay(2000);
 
             lock (applicationBytesQueue)
             {
