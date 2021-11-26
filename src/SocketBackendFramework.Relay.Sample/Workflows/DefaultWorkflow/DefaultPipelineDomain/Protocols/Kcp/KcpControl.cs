@@ -232,7 +232,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                     this.outOfOrderQueue.Remove(this.NextContiguousSequenceNumberToReceive);
                                     this.receivedQueue.Enqueue(nextSegment);
 
-                                    if (segment.FragmentCountLeft == 0)
+                                    if (nextSegment.FragmentCountLeft == 0)
                                     {
                                         // this is the last segment of the message
                                         this.ReceivedNewSegment?.Invoke(this, EventArgs.Empty);

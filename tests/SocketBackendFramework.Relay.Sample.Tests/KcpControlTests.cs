@@ -346,25 +346,16 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             kcpControl_2.ReceivedNewSegment += (sender, e) =>
             {
                 Console.WriteLine($"kcpControl_2.ReceivedNewSegment");
-                Task.Run(() =>
+                    
+                byte[] receivedApplicationBytes = new byte[1024 * 1024 * 10];
+                int receivedApplicationByteSize;
+                receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);
+                byte[] previousSent;
+                lock (applicationBytesQueue)
                 {
-                    byte[] receivedApplicationBytes = new byte[1024 * 1024 * 10];
-                    int receivedApplicationByteSize;
-                    do
-                    {
-                        receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);
-                        if (receivedApplicationByteSize == 0)
-                        {
-                            break;
-                        }
-                        byte[] previousSent;
-                        lock (applicationBytesQueue)
-                        {
-                            previousSent = applicationBytesQueue.Dequeue();
-                        }
-                        Assert.True(previousSent.AsSpan().SequenceEqual(receivedApplicationBytes.AsSpan()[..receivedApplicationByteSize]));
-                    } while (receivedApplicationByteSize > 0);
-                });
+                    previousSent = applicationBytesQueue.Dequeue();
+                }
+                Assert.True(previousSent.AsSpan().SequenceEqual(receivedApplicationBytes.AsSpan()[..receivedApplicationByteSize]));
             };
 
             // kcpControl_1 sends application bytes
@@ -379,7 +370,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                 kcpControl_1.Send(applicationBytes);
             }
 
-            await Task.Delay(1000);
+            await Task.Delay(10000);
 
             lock (applicationBytesQueue)
             {
