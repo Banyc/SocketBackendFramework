@@ -68,6 +68,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private Timer? transmissionTimer;
 
         public event EventHandler? TryingOutput;
+        public event EventHandler? ReceivedNewSegment;
 
         public KcpControl(uint conversationId,
                           bool isStreamMode,
@@ -177,6 +178,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                         case Command.Push:
                             {
                                 // application data
+                                bool isReceivedNewSegment = false;
 
                                 // discard invalid segments
                                 if ((int)segment.SequenceNumber - (int)this.NextContiguousSequenceNumberToReceive > this.receiveWindowSize)
@@ -191,6 +193,12 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                     // this segment is the next contiguous segment to receive
                                     // add it to the received queue
                                     this.receivedQueue.Enqueue(segment);
+
+                                    if (segment.FragmentCountLeft == 0)
+                                    {
+                                        // this is the last segment of the message
+                                        isReceivedNewSegment = true;
+                                    }
                                 }
                                 else
                                 {
@@ -213,12 +221,23 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                     System.Diagnostics.Debug.Assert(nextSegment != null);
                                     this.outOfOrderQueue.Remove(this.NextContiguousSequenceNumberToReceive);
                                     this.receivedQueue.Enqueue(nextSegment);
+
+                                    if (segment.FragmentCountLeft == 0)
+                                    {
+                                        // this is the last segment of the message
+                                        isReceivedNewSegment = true;
+                                    }
                                 }
 
                                 if (this.isNoDelayAck)
                                 {
                                     // send ack immediately
                                     this.TryOutputAll();
+                                }
+
+                                if (isReceivedNewSegment)
+                                {
+                                    this.ReceivedNewSegment?.Invoke(this, EventArgs.Empty);
                                 }
                             }
                             break;
