@@ -206,8 +206,8 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
         public async Task ApplicationBytesAreABitLongWithMoreEventHandlingAsync()
         {
             Random random = new Random();
-            using KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false);
-            using KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false);
+            using KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false, retransmissionTimeout: TimeSpan.FromMilliseconds(10));
+            using KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false, retransmissionTimeout: TimeSpan.FromMilliseconds(10));
 
             Queue<byte[]> applicationBytesQueue = new Queue<byte[]>();
 
@@ -251,17 +251,16 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             kcpControl_2.ReceivedNewSegment += (sender, e) =>
             {
                 Console.WriteLine($"kcpControl_2.ReceivedNewSegment");
-                Task.Run(() =>
+                    
+                byte[] receivedApplicationBytes = new byte[1024 * 1024 * 10];
+                int receivedApplicationByteSize;
+                receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);
+                byte[] previousSent;
+                lock (applicationBytesQueue)
                 {
-                    byte[] receivedApplicationBytes = new byte[1024 * 1024 * 10];
-                    int receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);
-                    byte[] previousSent;
-                    lock (applicationBytesQueue)
-                    {
-                        previousSent = applicationBytesQueue.Dequeue();
-                    }
-                    Assert.True(previousSent.AsSpan().SequenceEqual(receivedApplicationBytes.AsSpan()[..receivedApplicationByteSize]));
-                });
+                    previousSent = applicationBytesQueue.Dequeue();
+                }
+                Assert.True(previousSent.AsSpan().SequenceEqual(receivedApplicationBytes.AsSpan()[..receivedApplicationByteSize]));
             };
 
             // kcpControl_1 sends application bytes
@@ -278,15 +277,20 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                 kcpControl_1.Send(applicationBytes);
             }
 
-            await Task.Delay(1000);
+            await Task.Delay(2000);
+            
+            lock (applicationBytesQueue)
+            {
+                Assert.True(applicationBytesQueue.Count == 0);
+            }
         }
 
         [Fact]
         public async Task ApplicationBytesAreABitLongWithMoreEventHandlingAndPacketLossAsync()
         {
             Random random = new Random();
-            using KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false);
-            using KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false);
+            using KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false, retransmissionTimeout: TimeSpan.FromMilliseconds(10));
+            using KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false, retransmissionTimeout: TimeSpan.FromMilliseconds(10));
 
             Queue<byte[]> applicationBytesQueue = new Queue<byte[]>();
 
@@ -306,6 +310,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     if (random.Next(0, 100) < 10)
                     {
                         // oops, packet loss
+                        Console.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize} lost");
                         continue;
                     }
                     // this scope is locked by kcpControl_1
@@ -330,6 +335,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     if (random.Next(0, 100) < 10)
                     {
                         // oops, packet loss
+                        Console.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize} lost");
                         continue;
                     }
                     Task.Run(() => {
@@ -343,13 +349,21 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                 Task.Run(() =>
                 {
                     byte[] receivedApplicationBytes = new byte[1024 * 1024 * 10];
-                    int receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);
-                    byte[] previousSent;
-                    lock (applicationBytesQueue)
+                    int receivedApplicationByteSize;
+                    do
                     {
-                        previousSent = applicationBytesQueue.Dequeue();
-                    }
-                    Assert.True(previousSent.AsSpan().SequenceEqual(receivedApplicationBytes.AsSpan()[..receivedApplicationByteSize]));
+                        receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);
+                        if (receivedApplicationByteSize == 0)
+                        {
+                            break;
+                        }
+                        byte[] previousSent;
+                        lock (applicationBytesQueue)
+                        {
+                            previousSent = applicationBytesQueue.Dequeue();
+                        }
+                        Assert.True(previousSent.AsSpan().SequenceEqual(receivedApplicationBytes.AsSpan()[..receivedApplicationByteSize]));
+                    } while (receivedApplicationByteSize > 0);
                 });
             };
 
@@ -366,6 +380,11 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             }
 
             await Task.Delay(1000);
+
+            lock (applicationBytesQueue)
+            {
+                Assert.True(applicationBytesQueue.Count == 0);
+            }
         }
     }
 }

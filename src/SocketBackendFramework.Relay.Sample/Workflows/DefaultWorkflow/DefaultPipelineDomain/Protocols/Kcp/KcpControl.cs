@@ -49,7 +49,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         {
             get
             {
-                return Math.Min((int)this.receiveWindowSize - this.outOfOrderQueue.Count, 0);
+                return Math.Max((int)this.receiveWindowSize - this.outOfOrderQueue.Count, 0);
             }
         }
 
@@ -178,12 +178,19 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                         case Command.Push:
                             {
                                 // application data
-                                bool isReceivedNewSegment = false;
 
                                 // discard invalid segments
-                                if ((int)segment.SequenceNumber - (int)this.NextContiguousSequenceNumberToReceive > this.receiveWindowSize)
+                                if ((int)segment.SequenceNumber - (int)this.receivedQueue.SmallestSequenceNumberAllowed > this.receiveWindowSize)
                                 {
                                     // this segment is out of the receive window
+                                    // discard it
+                                    continue;
+                                }
+
+                                // discard duplicate segments
+                                if (segment.SequenceNumber < this.NextContiguousSequenceNumberToReceive)
+                                {
+                                    // this segment is a duplicate
                                     // discard it
                                     continue;
                                 }
@@ -197,12 +204,15 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                     if (segment.FragmentCountLeft == 0)
                                     {
                                         // this is the last segment of the message
-                                        isReceivedNewSegment = true;
+                                        this.ReceivedNewSegment?.Invoke(this, EventArgs.Empty);
                                     }
                                 }
                                 else
                                 {
+                                    System.Diagnostics.Debug.Assert(segment.SequenceNumber > this.NextContiguousSequenceNumberToReceive);
+                                    System.Diagnostics.Debug.Assert(segment.SequenceNumber < this.NextContiguousSequenceNumberToReceive + this.receiveWindowSize);
                                     // this segment is not the next contiguous segment to receive
+                                    // this segment is out of order
                                     // add it to the out-of-order queue
                                     // implicitly discard duplicate segments
                                     this.outOfOrderQueue[segment.SequenceNumber] = segment;
@@ -225,7 +235,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                     if (segment.FragmentCountLeft == 0)
                                     {
                                         // this is the last segment of the message
-                                        isReceivedNewSegment = true;
+                                        this.ReceivedNewSegment?.Invoke(this, EventArgs.Empty);
                                     }
                                 }
 
@@ -233,11 +243,6 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                 {
                                     // send ack immediately
                                     this.TryOutputAll();
-                                }
-
-                                if (isReceivedNewSegment)
-                                {
-                                    this.ReceivedNewSegment?.Invoke(this, EventArgs.Empty);
                                 }
                             }
                             break;
@@ -372,9 +377,8 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 // move just enough segments from toSend queue to sending queue
                 while (true)
                 {
-                    uint? firstToSendSequenceNumber = this.toSendQueue.GetFirstSequenceNumber();
-                    if (firstToSendSequenceNumber != null &&
-                        this.IsFitInSendingQueue(firstToSendSequenceNumber.Value))
+                    if (this.IsFitInSendingQueue(this.nextSequenceNumberToSend) &&
+                        this.toSendQueue.Count > 0)
                     {
                         var segment = this.toSendQueue.Dequeue();
                         System.Diagnostics.Debug.Assert(segment != null);
