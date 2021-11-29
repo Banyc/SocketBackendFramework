@@ -19,7 +19,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public UpwardPacketContext GetPacketContext(DefaultMiddlewareContext middlewareContext)
         {
-            return middlewareContext.Response.PacketContext;
+            return middlewareContext.Response!.PacketContext;
         }
     }
 }

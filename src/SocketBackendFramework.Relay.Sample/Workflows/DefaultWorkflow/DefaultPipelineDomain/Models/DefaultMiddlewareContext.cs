@@ -4,7 +4,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 {
     public class DefaultMiddlewareRequestContext
     {
-        public DownwardPacketContext PacketContext { get; set; }
+        public DownwardPacketContext? PacketContext { get; set; }
         public DefaultPacketHeader Header { get; set; } = new();
         public DefaultPacketBody Body { get; set; } = new();
     }
@@ -19,6 +19,6 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
     public class DefaultMiddlewareContext
     {
         public DefaultMiddlewareRequestContext? Request { get; set; }
-        public DefaultMiddlewareResponseContext Response { get; set; } = new();
+        public DefaultMiddlewareResponseContext? Response { get; set; }
     }
 }

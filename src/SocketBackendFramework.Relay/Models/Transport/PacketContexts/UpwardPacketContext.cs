@@ -12,7 +12,7 @@ namespace SocketBackendFramework.Relay.Models.Transport.PacketContexts
     public class UpwardPacketContext
     {
         public UpwardActionType ActionType { get; set; }
-        public FiveTuples FiveTuples { get; set; }
+        public FiveTuples? FiveTuples { get; set; }
 
         public byte[]? PacketRawBuffer { get; set; }
         public long PacketRawOffset { get; set; }

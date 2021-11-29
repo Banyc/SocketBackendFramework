@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Net;
-using SocketBackendFramework.Relay.Models;
 using SocketBackendFramework.Relay.Models.Delegates;
-using SocketBackendFramework.Relay.Models.Transport;
 using SocketBackendFramework.Relay.Models.Transport.Clients;
 using SocketBackendFramework.Relay.Models.Transport.PacketContexts;
 using SocketBackendFramework.Relay.Transport.Clients.SocketHandlers;
@@ -12,23 +9,23 @@ namespace SocketBackendFramework.Relay.Transport.Clients
 {
     public class TransportClient : ITransportAgent, IDisposable
     {
-        public event EventHandler<DownwardPacketContext> PacketReceived;
+        public event EventHandler<DownwardPacketContext>? PacketReceived;
 
         // tell transport mapper when this object's local port is available.
-        public event ConnectionEventHandler Connected;
+        public event ConnectionEventHandler? Connected;
 
         // tell transport mapper to dispose this
-        public event EventHandler<DownwardPacketContext> Disconnected;
+        public event EventHandler<DownwardPacketContext>? Disconnected;
 
         // in case this info cannot be accessed from a disposed socket object
-        public IPEndPoint LocalIPEndPoint { get; private set; }
+        public IPEndPoint? LocalIPEndPoint { get; private set; }
 
         public uint TransportAgentId { get; }
 
         private readonly System.Timers.Timer timer;
         private readonly IClientHandler client;
 
-        private TransportClientConfig config;
+        private readonly TransportClientConfig config;
 
         public TransportClient(TransportClientConfig config, IClientHandlerBuilder builder, uint transportAgentId)
         {
@@ -36,11 +33,11 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             this.TransportAgentId = transportAgentId;
 
             // build client
-            this.client = builder.Build(config.RemoteAddress, config.RemotePort, config.SocketHandlerConfigId);
+            this.client = builder.Build(config.RemoteAddress!, config.RemotePort, config.SocketHandlerConfigId);
             this.client.Connected += (sender, transportType, localEndPoint, remoteEndPoint) =>
             {
                 IClientHandler client = (IClientHandler)sender;
-                this.LocalIPEndPoint = (IPEndPoint)client.LocalEndPoint;
+                this.LocalIPEndPoint = (IPEndPoint)client.LocalEndPoint!;
                 this.Connected?.Invoke(
                     this,
                     transportType,
@@ -63,7 +60,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
         public void Respond(UpwardPacketContext context)
         {
             this.timer.Stop();
-            this.client.Send(context.PacketRawBuffer, context.PacketRawOffset, context.PacketRawSize);
+            this.client.Send(context.PacketRawBuffer!, context.PacketRawOffset, context.PacketRawSize);
             this.timer.Start();
         }
 
@@ -78,6 +75,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             // Console.WriteLine("TransportAgent {} has been disposed.");
             this.timer.Dispose();
             this.client.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         private void OnDisconnected(object sender, string transportType, EndPoint localEndPoint, EndPoint remoteEndPoint)
@@ -89,7 +87,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
                 FiveTuples = new()
                 {
                     Local = this.LocalIPEndPoint,
-                    Remote = new(IPAddress.Parse(this.config.RemoteAddress),
+                    Remote = new(IPAddress.Parse(this.config.RemoteAddress!),
                                  this.config.RemotePort),
                     TransportType = this.config.TransportType,
                 },

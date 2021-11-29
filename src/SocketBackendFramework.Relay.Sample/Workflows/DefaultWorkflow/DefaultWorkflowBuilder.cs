@@ -15,7 +15,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow
         private readonly TcpServerHandlerBuilderConfig tcpServerHandlerBuilderConfig;
         public DefaultWorkflowBuilder(WorkflowConfig config, ConfigRoot configRoot) : base(config)
         {
-            this.tcpServerHandlerBuilderConfig = configRoot.TcpServerHandlerBuilder;
+            this.tcpServerHandlerBuilderConfig = configRoot.TcpServerHandlerBuilder!;
         }
 
         protected override void ConfigurateWorkflow(WorkflowConfig config)

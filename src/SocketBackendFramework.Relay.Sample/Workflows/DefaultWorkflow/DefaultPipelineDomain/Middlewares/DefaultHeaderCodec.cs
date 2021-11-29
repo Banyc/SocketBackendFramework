@@ -10,14 +10,14 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
     {
         public void DecodeRequest(DefaultMiddlewareContext context)
         {
-            if (context.Request.PacketContext.EventType !=
+            if (context.Request!.PacketContext!.EventType !=
                 DownwardEventType.ApplicationMessageReceived)
             {
                 return;
             }
             int typeFieldOffset = 0;
             int typeFieldSize = 1;
-            int typeField = context.Request.PacketContext.PacketRawBuffer[typeFieldOffset];
+            int typeField = context.Request!.PacketContext!.PacketRawBuffer![typeFieldOffset];
             context.Request.Header.Type = (DefaultPacketHeaderType)typeField;
 
             int bodyOffset = (int)context.Request.PacketContext.PacketRawOffset + typeFieldSize;
@@ -30,7 +30,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public void EncodeResponse(DefaultMiddlewareContext context)
         {
-            if (context.Response.PacketContext.ActionType != UpwardActionType.SendApplicationMessage)
+            if (context.Response!.PacketContext.ActionType != UpwardActionType.SendApplicationMessage)
             {
                 return;
             }

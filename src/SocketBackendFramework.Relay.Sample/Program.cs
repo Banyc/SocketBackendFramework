@@ -18,10 +18,10 @@ var jsonSerializerOptions = new JsonSerializerOptions()
         new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
     }
 };
-ConfigRoot configRoot = JsonSerializer.Deserialize<ConfigRoot>(configJsonString,
+ConfigRoot? configRoot = JsonSerializer.Deserialize<ConfigRoot>(configJsonString,
                                                                jsonSerializerOptions);
 
-WorkflowPoolConfig workflowPoolConfig = configRoot.WorkflowPool;
+WorkflowPoolConfig workflowPoolConfig = configRoot!.WorkflowPool!;
 
 using WorkflowPool workflowPool = new(workflowPoolConfig);
 

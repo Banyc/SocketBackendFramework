@@ -1,13 +1,12 @@
 using System.Net;
 using NetCoreServer;
 using SocketBackendFramework.Relay.Models.Delegates;
-using SocketBackendFramework.Relay.Models.Transport.Listeners;
 
 namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 {
     public class UdpServerHandlerBuilder : IServerHandlerBuilder
     {
-        public IServerHandler Build(IPAddress ipAddress, int port, string configId)
+        public IServerHandler Build(IPAddress ipAddress, int port, string? configId)
         {
             return new UdpServerHandler(ipAddress, port);
         }
@@ -19,9 +18,9 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 
         public EndPoint LocalEndPoint { get; }
 
-        public event ConnectionEventHandler ClientConnected;
-        public event ConnectionEventHandler ClientDisconnected;
-        public event ReceivedEventHandler ClientMessageReceived;
+        public event ConnectionEventHandler? ClientConnected { add { } remove { } }
+        public event ConnectionEventHandler? ClientDisconnected { add { } remove { } }
+        public event ReceivedEventHandler? ClientMessageReceived;
 
         public UdpServerHandler(IPAddress address, int port) : base(address, port)
         {

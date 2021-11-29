@@ -8,9 +8,9 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
 {
     public class Listener : ITransportAgent, IDisposable
     {
-        public event EventHandler<DownwardPacketContext> PacketReceived;
-        public event EventHandler<DownwardPacketContext> TcpServerConnected;
-        public event EventHandler<DownwardPacketContext> TcpSessionDisconnected;
+        public event EventHandler<DownwardPacketContext>? PacketReceived;
+        public event EventHandler<DownwardPacketContext>? TcpServerConnected;
+        public event EventHandler<DownwardPacketContext>? TcpSessionDisconnected;
 
         private readonly ListenerConfig config;
         private readonly IServerHandler server;
@@ -38,13 +38,13 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
 
         public void Respond(UpwardPacketContext context)
         {
-            this.server.Send(context.FiveTuples.Remote, context.PacketRawBuffer, context.PacketRawOffset, context.PacketRawSize);
+            this.server.Send(context.FiveTuples!.Remote!, context.PacketRawBuffer!, context.PacketRawOffset, context.PacketRawSize);
         }
 
         public void DisconnectTcpSession(UpwardPacketContext context)
         {
             // disconnect a TCP session, not the listener
-            this.server.Disconnect(context.FiveTuples.Remote);
+            this.server.Disconnect(context.FiveTuples!.Remote!);
         }
 
         private void OnTcpServerConnected(object sender, string transportType, EndPoint localEndPoint, EndPoint remoteEndPoint)

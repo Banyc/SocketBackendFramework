@@ -18,7 +18,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         public override bool IsControllerMatch(DefaultMiddlewareContext context)
         {
             return
-                context.Request.PacketContext.EventType ==
+                context.Request!.PacketContext!.EventType ==
                     DownwardEventType.ApplicationMessageReceived &&
                 (
                     context.Request.Header.Type == DefaultPacketHeaderType.Echo ||
@@ -28,8 +28,9 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public override void Request(DefaultMiddlewareContext context)
         {
+            context.Response = new();
             context.Response.PacketContext.ActionType = UpwardActionType.SendApplicationMessage;
-            context.Response.PacketContext.FiveTuples = context.Request.PacketContext.FiveTuples;
+            context.Response.PacketContext.FiveTuples = context.Request!.PacketContext!.FiveTuples;
             context.Response.Header = new()
             {
                 Type = context.Request.Header.Type,
@@ -39,9 +40,9 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             if (context.Request.Header.Type == DefaultPacketHeaderType.EchoByClient)
             {
                 int remotePort;
-                if (context.Request.PacketContext.FiveTuples.TransportType == "udp")
+                if (context.Request!.PacketContext!.FiveTuples!.TransportType == "udp")
                 {
-                    remotePort = context.Request.PacketContext.FiveTuples.Remote.Port;
+                    remotePort = context.Request!.PacketContext!.FiveTuples!.Remote!.Port;
                 }
                 else
                 {
@@ -50,7 +51,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 context.Response.PacketContext.ClientConfig = new()
                 {
                     ClientDisposeTimeout = TimeSpan.FromSeconds(2),
-                    RemoteAddress = context.Request.PacketContext.FiveTuples.Remote.Address.ToString(),
+                    RemoteAddress = context.Request!.PacketContext!.FiveTuples!.Remote!.Address.ToString(),
                     RemotePort = remotePort,
                     TransportType = context.Request.PacketContext.FiveTuples.TransportType,
                 };

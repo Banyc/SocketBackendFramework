@@ -13,7 +13,7 @@ namespace SocketBackendFramework.Relay.Models.Transport.PacketContexts
     public class DownwardPacketContext
     {
         public DownwardEventType EventType { get; set; }
-        public FiveTuples FiveTuples { get; set; }
+        public FiveTuples? FiveTuples { get; set; }
         public uint TransportAgentId { get; set; }
 
         public byte[]? PacketRawBuffer { get; set; }

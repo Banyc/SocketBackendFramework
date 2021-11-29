@@ -10,14 +10,14 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         public override bool IsControllerMatch(DefaultMiddlewareContext context)
         {
             return
-                context.Request.PacketContext.EventType ==
+                context.Request!.PacketContext!.EventType ==
                     DownwardEventType.ApplicationMessageReceived &&
                 context.Request.Header.Type == DefaultPacketHeaderType.NoReply;
         }
 
         public override void Request(DefaultMiddlewareContext context)
         {
-            Console.WriteLine($"[NoReplyController] received a packet with message: {context.Request.Body.Message}");
+            Console.WriteLine($"[NoReplyController] received a packet with message: {context.Request!.Body.Message}");
         }
     }
 }

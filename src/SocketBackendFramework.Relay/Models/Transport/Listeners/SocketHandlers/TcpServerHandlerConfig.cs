@@ -8,7 +8,7 @@ namespace SocketBackendFramework.Relay.Models.Transport.Listeners.SocketHandlers
     public class TcpServerHandlerBuilderConfig
     {
         // ConfigId -> TcpServerHandlerConfig
-        public Dictionary<string, TcpServerHandlerConfig> TcpServerHandlers { get; set; }
+        public Dictionary<string, TcpServerHandlerConfig>? TcpServerHandlers { get; set; }
     }
     public class TcpServerHandlerConfig
     {

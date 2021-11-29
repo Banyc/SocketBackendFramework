@@ -4,7 +4,6 @@ using System.Net;
 using System.Timers;
 using NetCoreServer;
 using SocketBackendFramework.Relay.Models.Delegates;
-using SocketBackendFramework.Relay.Models.Transport.Listeners;
 using SocketBackendFramework.Relay.Models.Transport.Listeners.SocketHandlers;
 using SocketBackendFramework.Relay.Transport.Clients.SocketHandlers;
 
@@ -17,10 +16,10 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
         {
             this.config = config;
         }
-        public IServerHandler Build(IPAddress ipAddress, int port, string configId)
+        public IServerHandler Build(IPAddress ipAddress, int port, string? configId)
         {
             return new TcpServerHandler(ipAddress, port,
-                                        this.config.TcpServerHandlers[configId].SessionTimeoutMs);
+                                        this.config.TcpServerHandlers![configId!].SessionTimeoutMs);
         }
     }
 
@@ -54,16 +53,16 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
             this.LocalEndPoint = new IPEndPoint(address, port);
         }
 
-        public event ConnectionEventHandler ClientConnected;
-        public event ConnectionEventHandler ClientDisconnected;
-        public event ReceivedEventHandler ClientMessageReceived;
+        public event ConnectionEventHandler? ClientConnected;
+        public event ConnectionEventHandler? ClientDisconnected;
+        public event ReceivedEventHandler? ClientMessageReceived;
 
         #region TcpServer overrides
         protected override void OnConnected(TcpSession session)
         {
             IClientHandler client = (IClientHandler)session;
             Timer timeoutTimer = new Timer(this.tcpSessionTimeoutMs);
-            this.tcpSessions[client.RemoteEndPoint] = new()
+            this.tcpSessions[client.RemoteEndPoint!] = new()
             {
                 ClientHandler = client,
                 TimeoutTimer = timeoutTimer,
@@ -72,11 +71,11 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
             // register callbacks
             timeoutTimer.Elapsed += (sender, e) =>
             {
-                this.Disconnect(client.RemoteEndPoint);
+                this.Disconnect(client.RemoteEndPoint!);
             };
             client.Disconnected += (sender, transportType, localEndPoint, remoteEndPoint) =>
             {
-                this.Disconnect(client.RemoteEndPoint);  
+                this.Disconnect(client.RemoteEndPoint!);  
                 this.ClientDisconnected?.Invoke(
                     this,
                     transportType,
@@ -99,8 +98,8 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
             this.ClientConnected?.Invoke(
                 this,
                 client.TransportType,
-                client.LocalEndPoint,
-                client.RemoteEndPoint);
+                client.LocalEndPoint!,
+                client.RemoteEndPoint!);
         }
 
         protected override TcpSession CreateSession()
@@ -139,6 +138,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
             }
             this.tcpSessions.Clear();
             base.Dispose();
+            GC.SuppressFinalize(this);
         }
         #endregion
     }

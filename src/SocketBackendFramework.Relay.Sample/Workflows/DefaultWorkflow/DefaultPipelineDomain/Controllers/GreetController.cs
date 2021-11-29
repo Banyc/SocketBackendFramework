@@ -17,14 +17,15 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         public override bool IsControllerMatch(DefaultMiddlewareContext context)
         {
             return
-                context.Request.PacketContext.EventType ==
+                context.Request!.PacketContext!.EventType ==
                     DownwardEventType.TcpServerConnected;
         }
 
         public override void Request(DefaultMiddlewareContext context)
         {
+            context.Response = new();
             context.Response.PacketContext.ActionType = UpwardActionType.SendApplicationMessage;
-            context.Response.PacketContext.FiveTuples = context.Request.PacketContext.FiveTuples;
+            context.Response.PacketContext.FiveTuples = context.Request!.PacketContext!.FiveTuples;
             context.Response.Header = new()
             {
                 Type = DefaultPacketHeaderType.NoReply,

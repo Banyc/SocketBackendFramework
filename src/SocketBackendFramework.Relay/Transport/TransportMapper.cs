@@ -19,26 +19,24 @@ namespace SocketBackendFramework.Relay.Transport
         // local port -> client
         protected readonly ConcurrentDictionary<int, TransportClient> clients = new();
 
-        private readonly TransportMapperConfig config;
+        // private readonly TransportMapperConfig config;
         private uint transportAgentIdCounter = 0;
 
-        private readonly Dictionary<string, IServerHandlerBuilder> serverBuilders;
+        // private readonly Dictionary<string, IServerHandlerBuilder> serverBuilders;
         private readonly Dictionary<string, IClientHandlerBuilder> clientBuilders;
 
         protected TransportMapper(TransportMapperConfig config,
                                   Dictionary<string, IServerHandlerBuilder> serverBuilders,
                                   Dictionary<string, IClientHandlerBuilder> clientBuilders)
         {
-            this.config = config;
-            this.serverBuilders = serverBuilders;
+            // this.config = config;
+            // this.serverBuilders = serverBuilders;
             this.clientBuilders = clientBuilders;
-
-            this.config = config;
 
             foreach (var listenerConfig in config.Listeners)
             {
-                Listener newListener = new(listenerConfig, serverBuilders[listenerConfig.TransportType], this.transportAgentIdCounter++);
-                newListener.PacketReceived += OnDownwardEvent;
+                Listener newListener = new(listenerConfig, serverBuilders[listenerConfig.TransportType!], this.transportAgentIdCounter++);
+                newListener.PacketReceived += this.OnDownwardEvent;
                 newListener.TcpServerConnected += this.OnDownwardEvent;
                 newListener.TcpSessionDisconnected += this.OnDownwardEvent;
                 this.listeners[listenerConfig.ListeningPort] = newListener;
@@ -54,28 +52,28 @@ namespace SocketBackendFramework.Relay.Transport
         }
 
         // pass packet context down to pipeline
-        protected abstract void OnDownwardEvent(object sender, DownwardPacketContext context);
+        protected abstract void OnDownwardEvent(object? sender, DownwardPacketContext context);
 
         // receive packet context from pipeline
-        protected void OnSendingPacket(object sender, UpwardPacketContext context)
+        protected void SendPacket(UpwardPacketContext context)
         {
             switch (context.ActionType)
             {
                 case UpwardActionType.SendApplicationMessage:
-                    SendApplicationMessage(sender, context);
+                    SendApplicationMessage(context);
                     break;
                 case UpwardActionType.Disconnect:
-                    ActivelyDisconnectAsync(sender, context);
+                    ActivelyDisconnectAsync(context);
                     break;
                 default:
                     throw new ArgumentException();
-                    break;
+                    // break;
             }
         }
 
-        private void ActivelyDisconnectAsync(object sender, UpwardPacketContext context)
+        private void ActivelyDisconnectAsync(UpwardPacketContext context)
         {
-            if (this.listeners.ContainsKey(context.FiveTuples.Local.Port))
+            if (this.listeners.ContainsKey(context.FiveTuples!.Local!.Port))
             {
                 this.listeners[context.FiveTuples.Local.Port].DisconnectTcpSession(context);
             }
@@ -87,11 +85,11 @@ namespace SocketBackendFramework.Relay.Transport
             // else, the tcp session or the client might be disposed and removed from the list.
         }
 
-        private void SendApplicationMessage(object sender, UpwardPacketContext context)
+        private void SendApplicationMessage(UpwardPacketContext context)
         {
             if (context.ClientConfig == null)
             {
-                if (this.listeners.ContainsKey(context.FiveTuples.Local.Port))
+                if (this.listeners.ContainsKey(context.FiveTuples!.Local!.Port))
                 {
                     this.listeners[context.FiveTuples.Local.Port].Respond(context);
                 }
@@ -103,23 +101,22 @@ namespace SocketBackendFramework.Relay.Transport
             else
             {
                 // create a dedicated client to send the packet
-                TransportClient newClient = new(context.ClientConfig, this.clientBuilders[context.ClientConfig.TransportType], this.transportAgentIdCounter++);
+                TransportClient newClient = new(context.ClientConfig, this.clientBuilders[context.ClientConfig.TransportType!], this.transportAgentIdCounter++);
                 newClient.Connected += (sender, transportType, localEndPoint, remoteEndPoint) => {
                     TransportClient transportClient = (TransportClient)sender;
-                    this.clients[transportClient.LocalIPEndPoint.Port] = transportClient;
+                    this.clients[transportClient.LocalIPEndPoint!.Port] = transportClient;
                 };
-                newClient.PacketReceived += OnDownwardEvent;
-                void DisposeClient(object sender)
+                newClient.PacketReceived += this.OnDownwardEvent;
+                void DisposeClient(TransportClient client)
                 {
-                    TransportClient client = (TransportClient)sender;
-                    int localPort = client.LocalIPEndPoint.Port;
+                    int localPort = client.LocalIPEndPoint!.Port;
                     this.clients.Remove(localPort, out _);
                     client.Dispose();
                 }
                 newClient.Disconnected += (sender, context) =>
                 {
                     // dispose client before sending the event to pipeline
-                    DisposeClient(sender);
+                    DisposeClient(newClient);
                     this.OnDownwardEvent(sender, context);
                 };
                 newClient.Respond(context);
@@ -136,6 +133,7 @@ namespace SocketBackendFramework.Relay.Transport
             {
                 client.Dispose();
             }
+            GC.SuppressFinalize(this);
         }
     }
 
@@ -156,16 +154,16 @@ namespace SocketBackendFramework.Relay.Transport
             this.contextAdaptor = contextAdaptor;
         }
 
-        protected override void OnDownwardEvent(object sender, DownwardPacketContext context)
+        protected override void OnDownwardEvent(object? sender, DownwardPacketContext context)
         {
             TMiddlewareContext middlewareContext = this.contextAdaptor.GetMiddlewareContext(context);
             this.pipeline.GoDown(middlewareContext);
         }
 
-        private void OnSendingPacket(object sender, TMiddlewareContext middlewareContext)
+        private void OnSendingPacket(object? sender, TMiddlewareContext middlewareContext)
         {
             UpwardPacketContext context = this.contextAdaptor.GetPacketContext(middlewareContext);
-            base.OnSendingPacket(sender, context);
+            base.SendPacket(context);
         }
     }
 }
