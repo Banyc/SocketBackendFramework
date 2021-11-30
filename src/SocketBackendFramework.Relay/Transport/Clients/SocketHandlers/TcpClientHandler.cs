@@ -6,7 +6,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 {
     public class TcpClientHandlerBuilder : IClientHandlerBuilder
     {
-        public IClientHandler Build(string ipAddress, int port, string? configId)
+        public IClientHandler Build(string ipAddress, int port, object? config)
         {
             return new TcpClientHandler(ipAddress, port);
         }
@@ -42,7 +42,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
                 while (this.pendingTransmission.Count > 0)
                 {
                     byte[] buffer = this.pendingTransmission.Dequeue();
-                    base.Send(buffer);
+                    base.SendAsync(buffer);
                 }
                 // discard queue since the connection has been established
                 this.pendingTransmission = null;
@@ -79,7 +79,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
                 // send directly if no pendingTransmission
                 if (this.pendingTransmission == null)
                 {
-                    base.Send(buffer, offset, size);
+                    base.SendAsync(buffer, offset, size);
                 }
                 else
                 {

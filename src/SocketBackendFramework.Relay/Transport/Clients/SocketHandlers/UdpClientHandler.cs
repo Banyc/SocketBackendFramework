@@ -5,7 +5,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 {
     public class UdpClientHandlerBuilder : IClientHandlerBuilder
     {
-        public IClientHandler Build(string ipAddress, int port, string? configId)
+        public IClientHandler Build(string ipAddress, int port, object? config)
         {
             return new UdpClientHandler(ipAddress, port);
         }
@@ -65,7 +65,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 
         void IClientHandler.Send(byte[] buffer, long offset, long size)
         {
-            this.Send(buffer, offset, size);
+            this.SendAsync(buffer, offset, size);
         }
 
         void IClientHandler.Disconnect()
