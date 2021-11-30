@@ -8,7 +8,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 {
     public partial class KcpControl  // Tx
     {
-        private readonly bool isStreamMode;
+        public bool IsStreamMode { get; }
         public uint Mtu { get; set; } = 1400;  // maximum transmission unit
         private uint MaxSegmentDataSize { get => this.Mtu - KcpSegment.DataOffset; }  // maximum segment size
         private TimeSpan RetransmissionTimeout { get; } = TimeSpan.FromSeconds(3);  // rto
@@ -38,7 +38,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         {
             lock (this)
             {
-                this.toSendQueue.AddBuffer(data, this.MaxSegmentDataSize, this.isStreamMode);
+                this.toSendQueue.AddBuffer(data, this.MaxSegmentDataSize, this.IsStreamMode);
 
                 // check if MTU is reached and good to transmit bytes
                 uint firstSequenceNumber = this.nextSequenceNumberToSend;

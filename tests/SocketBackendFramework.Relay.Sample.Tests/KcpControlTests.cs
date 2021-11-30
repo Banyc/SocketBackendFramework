@@ -16,8 +16,15 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             byte[] bigBuffer = new byte[1024 * 1024 * 10];
             int writtenDataSize;
             Span<byte> bufferSpan = bigBuffer.AsSpan();
-            using KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 0, isNoDelayAck: false);
-            using KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 0, isNoDelayAck: false);
+            KcpConfig config = new()
+            {
+                ConversationId = (uint)Guid.NewGuid().GetHashCode(),
+                IsStreamMode = false,
+                ReceiveWindowSize = 0,
+                IsNoDelayAck = false,
+            };
+            using KcpControl kcpControl_1 = new KcpControl(config);
+            using KcpControl kcpControl_2 = new KcpControl(config);
 
             string applicationString = "hello world";
             byte[] applicationBytes = System.Text.Encoding.UTF8.GetBytes(applicationString);
@@ -43,8 +50,15 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
         [Fact]
         public async Task Test1WithEventHandlingAsync()
         {
-            using KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 0, isNoDelayAck: false);
-            using KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 0, isNoDelayAck: false);
+            KcpConfig config = new()
+            {
+                ConversationId = (uint)Guid.NewGuid().GetHashCode(),
+                IsStreamMode = false,
+                ReceiveWindowSize = 0,
+                IsNoDelayAck = false,
+            };
+            using KcpControl kcpControl_1 = new KcpControl(config);
+            using KcpControl kcpControl_2 = new KcpControl(config);
 
             kcpControl_1.TryingOutput += (sender, e) =>
             {
@@ -107,8 +121,15 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             byte[] bigBuffer = new byte[1024 * 1024 * 10];
             int writtenDataSize;
             Span<byte> bufferSpan = bigBuffer.AsSpan();
-            using KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false);
-            using KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false);
+            KcpConfig config = new()
+            {
+                ConversationId = (uint)Guid.NewGuid().GetHashCode(),
+                IsStreamMode = false,
+                ReceiveWindowSize = 3,
+                IsNoDelayAck = false,
+            };
+            using KcpControl kcpControl_1 = new KcpControl(config);
+            using KcpControl kcpControl_2 = new KcpControl(config);
 
             // it requires kcpControl_1 to send three segments
             byte[] applicationBytes = new byte[kcpControl_1.Mtu * 2];
@@ -147,8 +168,15 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
         public async Task ApplicationBytesAreABitLongWithEventHandlingAsync()
         {
             Random random = new Random();
-            using KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false);
-            using KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false);
+            KcpConfig config = new()
+            {
+                ConversationId = (uint)Guid.NewGuid().GetHashCode(),
+                IsStreamMode = false,
+                ReceiveWindowSize = 3,
+                IsNoDelayAck = false,
+            };
+            using KcpControl kcpControl_1 = new KcpControl(config);
+            using KcpControl kcpControl_2 = new KcpControl(config);
 
             kcpControl_1.TryingOutput += (sender, e) =>
             {
@@ -206,8 +234,16 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
         public async Task ApplicationBytesAreABitLongWithMoreEventHandlingAsync()
         {
             Random random = new Random();
-            using KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false, retransmissionTimeout: TimeSpan.FromMilliseconds(10));
-            using KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false, retransmissionTimeout: TimeSpan.FromMilliseconds(10));
+            KcpConfig config = new()
+            {
+                ConversationId = (uint)Guid.NewGuid().GetHashCode(),
+                IsStreamMode = false,
+                ReceiveWindowSize = 3,
+                IsNoDelayAck = false,
+                RetransmissionTimeout = TimeSpan.FromMilliseconds(10),
+            };
+            using KcpControl kcpControl_1 = new KcpControl(config);
+            using KcpControl kcpControl_2 = new KcpControl(config);
 
             Queue<byte[]> applicationBytesQueue = new Queue<byte[]>();
 
@@ -289,8 +325,16 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
         public async Task ApplicationBytesAreABitLongWithMoreEventHandlingAndPacketLossAsync()
         {
             Random random = new Random();
-            using KcpControl kcpControl_1 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false, retransmissionTimeout: TimeSpan.FromMilliseconds(10));
-            using KcpControl kcpControl_2 = new KcpControl(0x1, isStreamMode: false, receiveWindowSize: 3, isNoDelayAck: false, retransmissionTimeout: TimeSpan.FromMilliseconds(10));
+            KcpConfig config = new()
+            {
+                ConversationId = (uint)Guid.NewGuid().GetHashCode(),
+                IsStreamMode = false,
+                ReceiveWindowSize = 3,
+                IsNoDelayAck = false,
+                RetransmissionTimeout = TimeSpan.FromMilliseconds(10),
+            };
+            using KcpControl kcpControl_1 = new KcpControl(config);
+            using KcpControl kcpControl_2 = new KcpControl(config);
 
             Queue<byte[]> applicationBytesQueue = new Queue<byte[]>();
 

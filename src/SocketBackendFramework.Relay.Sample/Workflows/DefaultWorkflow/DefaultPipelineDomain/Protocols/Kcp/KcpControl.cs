@@ -28,21 +28,15 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         public event EventHandler? TryingOutput;
         public event EventHandler? ReceivedNewSegment;
 
-        public KcpControl(uint conversationId,
-                          bool isStreamMode,
-                          uint receiveWindowSize,
-                          bool isNoDelayAck,
-                          TimeSpan? retransmissionTimeout = null,
-                          TimeSpan? outputDuration = null,
-                          Action<byte[], int>? outputCallback = null)  // onOutput(byte[] data, int length)
+        public KcpControl(KcpConfig config)  // onOutput(byte[] data, int length)
         {
-            this.conversationId = conversationId;
-            this.isStreamMode = isStreamMode;
-            this.receiveWindowSize = receiveWindowSize;
-            this.isNoDelayAck = isNoDelayAck;
-            if (retransmissionTimeout != null)
+            this.conversationId = config.ConversationId;
+            this.IsStreamMode = config.IsStreamMode;
+            this.receiveWindowSize = config.ReceiveWindowSize;
+            this.isNoDelayAck = config.IsNoDelayAck;
+            if (config.RetransmissionTimeout != null)
             {
-                this.RetransmissionTimeout = retransmissionTimeout.Value;
+                this.RetransmissionTimeout = config.RetransmissionTimeout.Value;
             }
             else
             {
@@ -50,11 +44,11 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             }
 
             // output callback
-            this.outputCallback = outputCallback;
+            this.outputCallback = config.OutputCallback;
 
-            if (outputDuration != null)
+            if (config.OutputDuration != null)
             {
-                this.transmissionTimer = new Timer(outputDuration.Value.TotalMilliseconds);
+                this.transmissionTimer = new Timer(config.OutputDuration.Value.TotalMilliseconds);
             }
             else
             {
