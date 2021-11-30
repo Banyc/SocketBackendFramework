@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.IO;
 
 Memory<byte> receiver = new(new byte[8046]);
 
@@ -78,9 +79,19 @@ while (true)
     byte[] helloBytes = Encoding.UTF8.GetBytes(hello);
     List<byte> packet = new(header);
     packet.AddRange(helloBytes);
-    var stream = client.GetStream();
-    await stream.WriteAsync(packet.ToArray(), 0, packet.Count);
-    Console.WriteLine($"Sent     \"{hello}\" ({packet.Count} bytes).");
+
+    try
+    {
+        var stream = client.GetStream();
+        await stream.WriteAsync(packet.ToArray(), 0, packet.Count);
+        Console.WriteLine($"Sent     \"{hello}\" ({packet.Count} bytes).");
+    }
+    catch (IOException ex)
+    {
+        Console.WriteLine($"Error sending message: {ex.Message}");
+        client = await ReconnectToTheServerAsync(client);
+        continue;
+    }
 
     // TODO: check if the connection is been disconnected
 
