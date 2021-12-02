@@ -73,11 +73,11 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     {
                         break;
                     }
-                    // this scope is locked by kcpControl_1
-                    // new thread is to excape the lock
-                    Task.Run(() => {
+                    Task.Run(() =>
+                    {
                         System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize}");
-                        kcpControl_2.Input(bigBuffer.AsSpan()[..writtenDataSize]);});
+                        kcpControl_2.Input(bigBuffer.AsSpan()[..writtenDataSize]);
+                    });
                 }
             };
             kcpControl_2.TryingOutput += (sender, e) =>
@@ -92,9 +92,11 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     {
                         break;
                     }
-                    Task.Run(() => {
+                    Task.Run(() =>
+                    {
                         System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize}");
-                        kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);});
+                        kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);
+                    });
                 }
             };
 
@@ -191,11 +193,11 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     {
                         break;
                     }
-                    // this scope is locked by kcpControl_1
-                    // new thread is to excape the lock
-                    Task.Run(() => {
+                    Task.Run(() =>
+                    {
                         System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize}");
-                        kcpControl_2.Input(bigBuffer.AsSpan()[..writtenDataSize]);});
+                        kcpControl_2.Input(bigBuffer.AsSpan()[..writtenDataSize]);
+                    });
                 }
             };
             kcpControl_2.TryingOutput += (sender, e) =>
@@ -210,9 +212,11 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     {
                         break;
                     }
-                    Task.Run(() => {
+                    Task.Run(() =>
+                    {
                         System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize}");
-                        kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);});
+                        kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);
+                    });
                 }
             };
 
@@ -260,11 +264,11 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     {
                         break;
                     }
-                    // this scope is locked by kcpControl_1
-                    // new thread is to excape the lock
-                    Task.Run(() => {
+                    Task.Run(() =>
+                    {
                         System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize}");
-                        kcpControl_2.Input(bigBuffer.AsSpan()[..writtenDataSize]);});
+                        kcpControl_2.Input(bigBuffer.AsSpan()[..writtenDataSize]);
+                    });
                 }
             };
             kcpControl_2.TryingOutput += (sender, e) =>
@@ -279,9 +283,11 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     {
                         break;
                     }
-                    Task.Run(() => {
+                    Task.Run(() =>
+                    {
                         System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize}");
-                        kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);});
+                        kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);
+                    });
                 }
             };
             kcpControl_2.ReceivedCompleteSegment += (sender, completeSegmentBatchCount) =>
@@ -317,7 +323,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             }
 
             await Task.Delay(2000);
-            
+
             lock (applicationBytesQueue)
             {
                 Assert.True(applicationBytesQueue.Count == 0);
@@ -360,11 +366,8 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                         Console.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize} lost");
                         continue;
                     }
-                    // this scope is locked by kcpControl_1
-                    // new thread is to excape the lock
-                    Task.Run(() => {
-                        System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize}");
-                        kcpControl_2.Input(bigBuffer.AsSpan()[..writtenDataSize]);});
+                    System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize}");
+                    kcpControl_2.Input(bigBuffer.AsSpan()[..writtenDataSize]);
                 }
             };
             kcpControl_2.TryingOutput += (sender, e) =>
@@ -385,9 +388,8 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                         Console.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize} lost");
                         continue;
                     }
-                    Task.Run(() => {
-                        System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize}");
-                        kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);});
+                    System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize}");
+                    kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);
                 }
             };
             kcpControl_2.ReceivedCompleteSegment += (sender, completeSegmentBatchCount) =>
