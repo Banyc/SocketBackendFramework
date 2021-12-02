@@ -26,7 +26,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private Timer? transmissionTimer;
 
         public event EventHandler? TryingOutput;
-        public event EventHandler? ReceivedNewSegment;
+        public event EventHandler<int>? ReceivedCompleteSegment;
 
         public KcpControl(KcpConfig config)  // onOutput(byte[] data, int length)
         {
@@ -43,9 +43,6 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 this.RetransmissionTimeout = TimeSpan.FromSeconds(3);
             }
 
-            // output callback
-            this.outputCallback = config.OutputCallback;
-
             if (config.OutputDuration != null)
             {
                 this.transmissionTimer = new Timer(config.OutputDuration.Value.TotalMilliseconds);
@@ -57,12 +54,9 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             this.transmissionTimer.AutoReset = false;
             this.transmissionTimer.Elapsed += (sender, e) =>
             {
-                lock (this)
-                {
-                    this.TryOutputAll();
-                    // the timer could have already been disposed before the lock was acquired
-                    this.transmissionTimer?.Start();
-                }
+                this.TryOutputAll();
+                // the timer could have already been disposed before the lock was acquired
+                this.transmissionTimer?.Start();
             };
 
             this.transmissionTimer?.Start();
@@ -82,20 +76,6 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private void TryOutputAll()
         {
             this.TryingOutput?.Invoke(this, EventArgs.Empty);
-            if (this.outputCallback == null)
-            {
-                return;
-            }
-            int txDataSize;
-            do
-            {
-                byte[] txData = new byte[this.Mtu];
-                txDataSize = this.Output(txData);
-                if (txDataSize > 0)
-                {
-                    this.outputCallback(txData, txDataSize);
-                }
-            } while (txDataSize > 0);
         }
     }
 }

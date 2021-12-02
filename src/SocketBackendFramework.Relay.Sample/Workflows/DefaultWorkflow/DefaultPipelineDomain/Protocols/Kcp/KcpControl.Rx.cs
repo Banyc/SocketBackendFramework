@@ -25,6 +25,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public void Input(Span<byte> rawData)
         {
+            int completeSegmentBatchCount = 0;
             lock (this)
             {
                 while (true)
@@ -107,7 +108,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                     if (segment.FragmentCountLeft == 0)
                                     {
                                         // this is the last segment of the message
-                                        this.ReceivedNewSegment?.Invoke(this, EventArgs.Empty);
+                                        completeSegmentBatchCount += 1;
                                     }
                                 }
                                 else
@@ -131,7 +132,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                     if (nextSegment.FragmentCountLeft == 0)
                                     {
                                         // this is the last segment of the message
-                                        this.ReceivedNewSegment?.Invoke(this, EventArgs.Empty);
+                                        completeSegmentBatchCount += 1;
                                     }
                                 }
 
@@ -159,6 +160,11 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                             // break;
                     }
                 }
+            }
+            if (completeSegmentBatchCount > 0)
+            {
+                // send ack immediately
+                this.ReceivedCompleteSegment?.Invoke(this, completeSegmentBatchCount);
             }
         }
 

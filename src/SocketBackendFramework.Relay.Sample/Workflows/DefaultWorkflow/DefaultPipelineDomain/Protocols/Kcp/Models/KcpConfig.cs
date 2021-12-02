@@ -10,6 +10,5 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         public bool IsNoDelayAck { get; set; }
         public TimeSpan? RetransmissionTimeout { get; set; } = null;
         public TimeSpan? OutputDuration { get; set; } = null;
-        public Action<byte[], int>? OutputCallback { get; set; } = null;
     }
 }

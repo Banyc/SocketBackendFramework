@@ -284,19 +284,22 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                         kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);});
                 }
             };
-            kcpControl_2.ReceivedNewSegment += (sender, e) =>
+            kcpControl_2.ReceivedCompleteSegment += (sender, completeSegmentBatchCount) =>
             {
-                Console.WriteLine($"kcpControl_2.ReceivedNewSegment");
-                    
-                byte[] receivedApplicationBytes = new byte[1024 * 1024 * 10];
-                int receivedApplicationByteSize;
-                receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);
-                byte[] previousSent;
-                lock (applicationBytesQueue)
+                Console.WriteLine($"kcpControl_2.ReceivedCompleteSegment");
+                int i;
+                for (i = 0; i < completeSegmentBatchCount; i++)
                 {
-                    previousSent = applicationBytesQueue.Dequeue();
+                    byte[] receivedApplicationBytes = new byte[1024 * 1024 * 10];
+                    int receivedApplicationByteSize;
+                    receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);
+                    byte[] previousSent;
+                    lock (applicationBytesQueue)
+                    {
+                        previousSent = applicationBytesQueue.Dequeue();
+                    }
+                    Assert.True(previousSent.AsSpan().SequenceEqual(receivedApplicationBytes.AsSpan()[..receivedApplicationByteSize]));
                 }
-                Assert.True(previousSent.AsSpan().SequenceEqual(receivedApplicationBytes.AsSpan()[..receivedApplicationByteSize]));
             };
 
             // kcpControl_1 sends application bytes
@@ -387,19 +390,22 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                         kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);});
                 }
             };
-            kcpControl_2.ReceivedNewSegment += (sender, e) =>
+            kcpControl_2.ReceivedCompleteSegment += (sender, completeSegmentBatchCount) =>
             {
-                Console.WriteLine($"kcpControl_2.ReceivedNewSegment");
-                    
-                byte[] receivedApplicationBytes = new byte[1024 * 1024 * 10];
-                int receivedApplicationByteSize;
-                receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);
-                byte[] previousSent;
-                lock (applicationBytesQueue)
+                Console.WriteLine($"kcpControl_2.ReceivedCompleteSegment");
+                int i;
+                for (i = 0; i < completeSegmentBatchCount; i++)
                 {
-                    previousSent = applicationBytesQueue.Dequeue();
+                    byte[] receivedApplicationBytes = new byte[1024 * 1024 * 10];
+                    int receivedApplicationByteSize;
+                    receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);
+                    byte[] previousSent;
+                    lock (applicationBytesQueue)
+                    {
+                        previousSent = applicationBytesQueue.Dequeue();
+                    }
+                    Assert.True(previousSent.AsSpan().SequenceEqual(receivedApplicationBytes.AsSpan()[..receivedApplicationByteSize]));
                 }
-                Assert.True(previousSent.AsSpan().SequenceEqual(receivedApplicationBytes.AsSpan()[..receivedApplicationByteSize]));
             };
 
             // kcpControl_1 sends application bytes

@@ -13,7 +13,6 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private uint MaxSegmentDataSize { get => this.Mtu - KcpSegment.DataOffset; }  // maximum segment size
         private TimeSpan RetransmissionTimeout { get; } = TimeSpan.FromSeconds(3);  // rto
         private uint nextSequenceNumberToSend = 0;  // snd_nxt
-        private readonly Action<byte[], int>? outputCallback;
         private int SpaceLeftInOutOfOrderQueue
         {
             get
@@ -36,6 +35,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public void Send(Span<byte> data)
         {
+            bool shouldTryOutputAll = false;
             lock (this)
             {
                 this.toSendQueue.AddBuffer(data, this.MaxSegmentDataSize, this.IsStreamMode);
@@ -43,14 +43,17 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 // check if MTU is reached and good to transmit bytes
                 uint firstSequenceNumber = this.nextSequenceNumberToSend;
                 uint lastSequenceNumber = this.nextSequenceNumberToSend + (uint)this.toSendQueue.Count - 1;
-                if (this.outputCallback != null &&
-                    this.IsFitInSendingQueue(firstSequenceNumber) &&  // sending queue is not full
+                if (this.IsFitInSendingQueue(firstSequenceNumber) &&  // sending queue is not full
                     (
                         this.toSendQueue.TotalByteCount >= this.Mtu ||  // MTU is reached
                         !this.IsFitInSendingQueue(lastSequenceNumber + 1)))  // to fully fill the sending queue
                 {
-                    this.TryOutputAll();
+                    shouldTryOutputAll = true;
                 }
+            }
+            if (shouldTryOutputAll)
+            {
+                this.TryOutputAll();
             }
         }
 
