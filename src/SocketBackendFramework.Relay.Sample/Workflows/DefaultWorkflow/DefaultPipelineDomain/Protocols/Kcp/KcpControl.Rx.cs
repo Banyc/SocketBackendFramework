@@ -139,7 +139,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                 if (this.isNoDelayAck)
                                 {
                                     // send ack immediately
-                                    this.TryOutputAll();
+                                    this.TryOutput();
                                 }
                             }
                             break;

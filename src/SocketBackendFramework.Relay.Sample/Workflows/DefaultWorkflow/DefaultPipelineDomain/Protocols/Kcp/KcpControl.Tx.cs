@@ -53,7 +53,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             }
             if (shouldTryOutputAll)
             {
-                this.TryOutputAll();
+                this.TryOutput();
             }
         }
 

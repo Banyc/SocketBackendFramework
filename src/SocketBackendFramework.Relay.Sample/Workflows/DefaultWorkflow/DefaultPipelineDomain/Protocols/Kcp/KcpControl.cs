@@ -54,7 +54,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             this.transmissionTimer.AutoReset = false;
             this.transmissionTimer.Elapsed += (sender, e) =>
             {
-                this.TryOutputAll();
+                this.TryOutput();
                 // the timer could have already been disposed before the lock was acquired
                 this.transmissionTimer?.Start();
             };
@@ -73,9 +73,23 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             GC.SuppressFinalize(this);
         }
 
-        private void TryOutputAll()
+        private bool isTryingOutput = false;
+        private readonly object tryOutputLock = new();
+        private void TryOutput()
         {
+            // make sure it's only one thread calling event this.TryingOutput
+            lock (this.tryOutputLock)
+            {
+                if (this.isTryingOutput)
+                {
+                    return;
+                }
+                this.isTryingOutput = true;
+            }
+
+            // the output order is guaranteed since there is only one thread calling this event
             this.TryingOutput?.Invoke(this, EventArgs.Empty);
+            this.isTryingOutput = false;
         }
     }
 }
