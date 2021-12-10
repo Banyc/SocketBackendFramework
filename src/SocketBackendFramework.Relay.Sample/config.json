@@ -17,6 +17,11 @@
                                     "ListeningPort": 8081,
                                     "TransportType": "tcp",
                                     "SocketHandlerConfigId": "defaultTcpServerHandlerConfig"
+                                },
+                                {
+                                    "ListeningPort": 8081,
+                                    "TransportType": "kcp",
+                                    "SocketHandlerConfigId": "defaultKcpServerHandlerConfig"
                                 }
                             ]
                         }
@@ -30,6 +35,13 @@
         "TcpServerHandlers": {
             "defaultTcpServerHandlerConfig": {  // SocketHandlerConfigId
                 "SessionTimeoutMs": 2000
+            }
+        }
+    },
+    "KcpServerHandlerBuilder": {
+        "KcpServerHandlers": {
+            "defaultKcpServerHandlerConfig": {  // SocketHandlerConfigId
+                "ConnectionTimeoutMs": 2000
             }
         }
     }

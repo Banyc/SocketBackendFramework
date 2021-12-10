@@ -1,4 +1,3 @@
-using SocketBackendFramework.Relay.Models.Transport.Listeners.SocketHandlers;
 using SocketBackendFramework.Relay.Models.Workflows;
 using SocketBackendFramework.Relay.Pipeline;
 using SocketBackendFramework.Relay.Pipeline.Middlewares.ControllersMapper;
@@ -12,10 +11,10 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow
 {
     public class DefaultWorkflowBuilder : WorkflowBuilder
     {
-        private readonly TcpServerHandlerBuilderConfig tcpServerHandlerBuilderConfig;
+        private readonly ConfigRoot configRoot;
         public DefaultWorkflowBuilder(WorkflowConfig config, ConfigRoot configRoot) : base(config)
         {
-            this.tcpServerHandlerBuilderConfig = configRoot.TcpServerHandlerBuilder!;
+            this.configRoot = configRoot!;
         }
 
         protected override void ConfigurateWorkflow(WorkflowConfig config)
@@ -24,7 +23,8 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow
             ControllersMapper<DefaultMiddlewareContext> defaultControllersMapper = new();
             // build pipeline domain
             DefaultPipelineDomainBuilder defaultPipelineDomainBuilder = new(config.GetPipelineDomainConfig("default"),
-                                                                            this.tcpServerHandlerBuilderConfig);
+                                                                            this.configRoot.TcpServerHandlerBuilder!,
+                                                                            this.configRoot.KcpServerHandlerBuilder!);
             PipelineDomain<DefaultMiddlewareContext> defaultPipelineDomain = defaultPipelineDomainBuilder.Build();
             // add controllers mappers to corresponding pipeline
             defaultPipelineDomain.Pipeline.Use(defaultControllersMapper);

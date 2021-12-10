@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Timers;
@@ -9,6 +10,28 @@ using SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers;
 
 namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.DefaultSocketHandlers
 {
+    public class KcpServerHandlerBuilderConfig
+    {
+        public Dictionary<string, KcpServerHandlerConfig>? KcpServerHandlers { get; set; }
+    }
+    public class KcpServerHandlerBuilder : IServerHandlerBuilder
+    {
+        private readonly KcpServerHandlerBuilderConfig config;
+        public KcpServerHandlerBuilder(KcpServerHandlerBuilderConfig config)
+        {
+            this.config = config;
+        }
+        public IServerHandler Build(IPAddress ipAddress, int port, string? configId)
+        {
+            KcpControlBuilder kcpControlBuilder = new KcpControlBuilder();
+            return new KcpServerHandler(kcpControlBuilder, ipAddress, port, this.config.KcpServerHandlers![configId!]);
+        }
+    }
+
+    public class KcpServerHandlerConfig
+    {
+        public double ConnectionTimeoutMs { get; set; }
+    }
     public class KcpServerHandler: NetCoreServer.UdpServer, IServerHandler
     {
         private struct ClientInfo : IDisposable
@@ -39,11 +62,11 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private readonly ConcurrentDictionary<EndPoint, ClientInfo> connections = new();
         private readonly TimeSpan connectionTimeout;
 
-        public KcpServerHandler(KcpControlBuilder kcpControlBuilder, IPAddress address, int port, TimeSpan connectionTimeout) : base(address, port)
+        public KcpServerHandler(KcpControlBuilder kcpControlBuilder, IPAddress address, int port, KcpServerHandlerConfig config) : base(address, port)
         {
             this.kcpControlBuilder = kcpControlBuilder;
             this.LocalEndPoint = new IPEndPoint(address, port);
-            this.connectionTimeout = connectionTimeout;
+            this.connectionTimeout = TimeSpan.FromMilliseconds(config.ConnectionTimeoutMs);
         }
 
         protected override void OnStarted()
