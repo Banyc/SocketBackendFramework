@@ -33,7 +33,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             this.TransportAgentId = transportAgentId;
 
             // build client
-            this.client = builder.Build(config.RemoteAddress!, config.RemotePort, config.SocketHandlerConfigId);
+            this.client = builder.Build(config.RemoteAddress!, config.RemotePort, config.SocketHandlerConfig);
             this.client.Connected += (sender, transportType, localEndPoint, remoteEndPoint) =>
             {
                 IClientHandler client = (IClientHandler)sender;

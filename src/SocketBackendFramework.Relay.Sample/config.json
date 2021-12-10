@@ -19,7 +19,7 @@
                                     "SocketHandlerConfigId": "defaultTcpServerHandlerConfig"
                                 },
                                 {
-                                    "ListeningPort": 8081,
+                                    "ListeningPort": 8083,
                                     "TransportType": "kcp",
                                     "SocketHandlerConfigId": "defaultKcpServerHandlerConfig"
                                 }
