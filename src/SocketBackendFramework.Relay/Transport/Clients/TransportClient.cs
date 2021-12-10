@@ -46,7 +46,6 @@ namespace SocketBackendFramework.Relay.Transport.Clients
             };
             this.client.Received += OnReceive;
             this.client.Disconnected += OnDisconnected;
-            this.client.Connect();
 
             this.timer = new()
             {
@@ -54,6 +53,11 @@ namespace SocketBackendFramework.Relay.Transport.Clients
                 AutoReset = false,
             };
             this.timer.Elapsed += (sender, e) => this.DisconnectAsync();
+        }
+
+        public void Connect()
+        {
+            this.client.Connect();
             this.timer.Start();
         }
 

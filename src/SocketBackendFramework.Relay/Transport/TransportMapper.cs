@@ -119,6 +119,7 @@ namespace SocketBackendFramework.Relay.Transport
                     DisposeClient(newClient);
                     this.OnDownwardEvent(sender, context);
                 };
+                newClient.Connect();
                 newClient.Respond(context);
             }
         }
