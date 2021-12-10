@@ -7,7 +7,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         public uint ConversationId { get; set; }
         public bool IsStreamMode { get; set; }
         public uint ReceiveWindowSize { get; set; }
-        public bool IsNoDelayAck { get; set; }
+        public bool ShouldSendSmallPacketsNoDelay { get; set; }
         public TimeSpan? RetransmissionTimeout { get; set; } = null;
         public TimeSpan? OutputDuration { get; set; } = null;
     }

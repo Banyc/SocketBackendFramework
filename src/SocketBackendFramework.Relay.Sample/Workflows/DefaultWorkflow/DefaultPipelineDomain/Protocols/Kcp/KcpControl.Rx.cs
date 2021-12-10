@@ -8,8 +8,6 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 {
     public partial class KcpControl  // Rx
     {
-        private bool isNoDelayAck;
-
         // acked but out-of-order segments
         private readonly SortedDictionary<uint, KcpSegment> outOfOrderQueue = new();  // rcv_buf
 
@@ -136,7 +134,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                     }
                                 }
 
-                                if (this.isNoDelayAck)
+                                if (this.shouldSendSmallPacketsNoDelay)
                                 {
                                     // send ack immediately
                                     this.TryOutput();

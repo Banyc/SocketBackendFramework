@@ -21,7 +21,9 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                 ConversationId = (uint)Guid.NewGuid().GetHashCode(),
                 IsStreamMode = false,
                 ReceiveWindowSize = 0,
-                IsNoDelayAck = false,
+                ShouldSendSmallPacketsNoDelay = false,
+                RetransmissionTimeout = TimeSpan.FromSeconds(3),
+                OutputDuration = TimeSpan.FromMilliseconds(10),
             };
             using KcpControl kcpControl_1 = new KcpControl(config);
             using KcpControl kcpControl_2 = new KcpControl(config);
@@ -55,7 +57,9 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                 ConversationId = (uint)Guid.NewGuid().GetHashCode(),
                 IsStreamMode = false,
                 ReceiveWindowSize = 0,
-                IsNoDelayAck = false,
+                ShouldSendSmallPacketsNoDelay = false,
+                RetransmissionTimeout = TimeSpan.FromSeconds(3),
+                OutputDuration = TimeSpan.FromMilliseconds(10),
             };
             using KcpControl kcpControl_1 = new KcpControl(config);
             using KcpControl kcpControl_2 = new KcpControl(config);
@@ -74,7 +78,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     }
                     // Task.Run(() =>
                     // {
-                        System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize}");
+                        System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize} bytes");
                         kcpControl_2.Input(bigBuffer.AsSpan()[..writtenDataSize]);
                     // });
                 }
@@ -93,7 +97,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     }
                     // Task.Run(() =>
                     // {
-                        System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize}");
+                        System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize} bytes");
                         kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);
                     // });
                 }
@@ -127,7 +131,9 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                 ConversationId = (uint)Guid.NewGuid().GetHashCode(),
                 IsStreamMode = false,
                 ReceiveWindowSize = 3,
-                IsNoDelayAck = false,
+                ShouldSendSmallPacketsNoDelay = false,
+                RetransmissionTimeout = TimeSpan.FromSeconds(3),
+                OutputDuration = TimeSpan.FromMilliseconds(10),
             };
             using KcpControl kcpControl_1 = new KcpControl(config);
             using KcpControl kcpControl_2 = new KcpControl(config);
@@ -174,7 +180,9 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                 ConversationId = (uint)Guid.NewGuid().GetHashCode(),
                 IsStreamMode = false,
                 ReceiveWindowSize = 3,
-                IsNoDelayAck = false,
+                ShouldSendSmallPacketsNoDelay = false,
+                RetransmissionTimeout = TimeSpan.FromSeconds(3),
+                OutputDuration = TimeSpan.FromMilliseconds(10),
             };
             using KcpControl kcpControl_1 = new KcpControl(config);
             using KcpControl kcpControl_2 = new KcpControl(config);
@@ -194,7 +202,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     }
                     Task.Run(() =>
                     {
-                        System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize}");
+                        System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize} bytes");
                         kcpControl_2.Input(bigBuffer.AsSpan()[..writtenDataSize]);
                     });
                 }
@@ -213,7 +221,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     }
                     Task.Run(() =>
                     {
-                        System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize}");
+                        System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize} bytes");
                         kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);
                     });
                 }
@@ -242,8 +250,9 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                 ConversationId = (uint)Guid.NewGuid().GetHashCode(),
                 IsStreamMode = false,
                 ReceiveWindowSize = 3,
-                IsNoDelayAck = false,
+                ShouldSendSmallPacketsNoDelay = false,
                 RetransmissionTimeout = TimeSpan.FromMilliseconds(10),
+                OutputDuration = TimeSpan.FromMilliseconds(10),
             };
             using KcpControl kcpControl_1 = new KcpControl(config);
             using KcpControl kcpControl_2 = new KcpControl(config);
@@ -264,7 +273,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     }
                     // Task.Run(() =>
                     // {
-                        System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize}");
+                        System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize} bytes");
                         kcpControl_2.Input(bigBuffer.AsSpan()[..writtenDataSize]);
                     // });
                 }
@@ -283,7 +292,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     }
                     // Task.Run(() =>
                     // {
-                        System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize}");
+                        System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize} bytes");
                         kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);
                     // });
                 }
@@ -337,8 +346,9 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                 ConversationId = (uint)Guid.NewGuid().GetHashCode(),
                 IsStreamMode = false,
                 ReceiveWindowSize = 3,
-                IsNoDelayAck = false,
+                ShouldSendSmallPacketsNoDelay = false,
                 RetransmissionTimeout = TimeSpan.FromMilliseconds(10),
+                OutputDuration = TimeSpan.FromMilliseconds(10),
             };
             using KcpControl kcpControl_1 = new KcpControl(config);
             using KcpControl kcpControl_2 = new KcpControl(config);
@@ -361,10 +371,10 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     if (random.Next(0, 100) < 10)
                     {
                         // oops, packet loss
-                        Console.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize} lost");
+                        Console.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize} bytes lost");
                         continue;
                     }
-                    System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize}");
+                    System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize} bytes");
                     kcpControl_2.Input(bigBuffer.AsSpan()[..writtenDataSize]);
                 }
             };
@@ -383,10 +393,10 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     if (random.Next(0, 100) < 10)
                     {
                         // oops, packet loss
-                        Console.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize} lost");
+                        Console.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize} bytes lost");
                         continue;
                     }
-                    System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize}");
+                    System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize} bytes");
                     kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);
                 }
             };
@@ -409,7 +419,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             };
 
             // kcpControl_1 sends application bytes
-            for (int i = 0; i < 30; i++)
+            for (int i = 0; i < 300; i++)
             {
                 byte[] applicationBytes = new byte[kcpControl_1.Mtu * 2];
                 random.NextBytes(applicationBytes);
@@ -420,7 +430,7 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                 kcpControl_1.Send(applicationBytes);
             }
 
-            await Task.Delay(2000);
+            await Task.Delay(20000);
 
             lock (applicationBytesQueue)
             {

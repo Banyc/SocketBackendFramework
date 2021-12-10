@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Protocols.Kcp.Models;
 
 namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Protocols.Kcp
@@ -45,8 +43,11 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 uint lastSequenceNumber = this.nextSequenceNumberToSend + (uint)this.toSendQueue.Count - 1;
                 if (this.IsFitInSendingQueue(firstSequenceNumber) &&  // sending queue is not full
                     (
-                        this.toSendQueue.TotalByteCount >= this.Mtu ||  // MTU is reached
-                        !this.IsFitInSendingQueue(lastSequenceNumber + 1)))  // to fully fill the sending queue
+                        this.shouldSendSmallPacketsNoDelay ||
+                        (
+                            this.toSendQueue.TotalByteCount >= this.Mtu ||  // MTU is reached
+                            !this.IsFitInSendingQueue(lastSequenceNumber + 1)))  // to fully fill the sending queue
+                    )
                 {
                     shouldTryOutputAll = true;
                 }

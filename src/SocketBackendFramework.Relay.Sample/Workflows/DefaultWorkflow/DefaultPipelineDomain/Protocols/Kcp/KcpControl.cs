@@ -14,7 +14,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         }
 
         private readonly uint conversationId;
-
+        private readonly bool shouldSendSmallPacketsNoDelay;
         private readonly uint receiveWindowSize;  // rcv_wnd  // out-of-order queue size
         private uint remoteWindowSize = 0;
 
@@ -33,7 +33,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             this.conversationId = config.ConversationId;
             this.IsStreamMode = config.IsStreamMode;
             this.receiveWindowSize = config.ReceiveWindowSize;
-            this.isNoDelayAck = config.IsNoDelayAck;
+            this.shouldSendSmallPacketsNoDelay = config.ShouldSendSmallPacketsNoDelay;
             if (config.RetransmissionTimeout != null)
             {
                 this.RetransmissionTimeout = config.RetransmissionTimeout.Value;
@@ -75,10 +75,13 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         private bool isTryingOutput = false;
         private readonly object tryOutputLock = new();
+        // thread-safe
+        // ask for external event handlers of this.TryingOutput calling this.Output()
+        // do NOT call this.TryOutput() within a locked scope
         private void TryOutput()
         {
             // make sure it's only one thread calling event this.TryingOutput
-            lock (this.tryOutputLock)
+            lock (this.tryOutputLock)  // protect this.isTryingOutput
             {
                 if (this.isTryingOutput)
                 {

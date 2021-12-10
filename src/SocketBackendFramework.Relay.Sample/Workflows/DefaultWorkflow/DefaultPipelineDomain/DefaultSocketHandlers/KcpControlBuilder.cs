@@ -1,3 +1,4 @@
+using System;
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Protocols.Kcp;
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Protocols.Kcp.Models;
 
@@ -12,7 +13,9 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 ConversationId = 0x0,
                 IsStreamMode = false,
                 ReceiveWindowSize = 15,
-                IsNoDelayAck = false,
+                ShouldSendSmallPacketsNoDelay = false,
+                RetransmissionTimeout = TimeSpan.FromSeconds(3),
+                OutputDuration = TimeSpan.FromMilliseconds(10),
             };
             return new KcpControl(config);
         }
