@@ -67,17 +67,16 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                 {
                     byte[] bigBuffer = new byte[kcpControl_1.Mtu];
                     Span<byte> bufferSpan = bigBuffer.AsSpan();
-                    // must be declared in the loop so that the value in the new thread will not be altered
                     int writtenDataSize = kcpControl_1.Output(bufferSpan);
                     if (writtenDataSize <= 0)
                     {
                         break;
                     }
-                    Task.Run(() =>
-                    {
+                    // Task.Run(() =>
+                    // {
                         System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize}");
                         kcpControl_2.Input(bigBuffer.AsSpan()[..writtenDataSize]);
-                    });
+                    // });
                 }
             };
             kcpControl_2.TryingOutput += (sender, e) =>
@@ -92,11 +91,11 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     {
                         break;
                     }
-                    Task.Run(() =>
-                    {
+                    // Task.Run(() =>
+                    // {
                         System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize}");
                         kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);
-                    });
+                    // });
                 }
             };
 
@@ -258,17 +257,16 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                 {
                     byte[] bigBuffer = new byte[kcpControl_1.Mtu];
                     Span<byte> bufferSpan = bigBuffer.AsSpan();
-                    // must be declared in the loop so that the value in the new thread will not be altered
                     int writtenDataSize = kcpControl_1.Output(bufferSpan);
                     if (writtenDataSize <= 0)
                     {
                         break;
                     }
-                    Task.Run(() =>
-                    {
+                    // Task.Run(() =>
+                    // {
                         System.Diagnostics.Debug.WriteLine($"kcpControl_1.TryingOutput: {writtenDataSize}");
                         kcpControl_2.Input(bigBuffer.AsSpan()[..writtenDataSize]);
-                    });
+                    // });
                 }
             };
             kcpControl_2.TryingOutput += (sender, e) =>
@@ -283,11 +281,11 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     {
                         break;
                     }
-                    Task.Run(() =>
-                    {
+                    // Task.Run(() =>
+                    // {
                         System.Diagnostics.Debug.WriteLine($"kcpControl_2.TryingOutput: {writtenDataSize}");
                         kcpControl_1.Input(bigBuffer.AsSpan()[..writtenDataSize]);
-                    });
+                    // });
                 }
             };
             kcpControl_2.ReceivedCompleteSegment += (sender, completeSegmentBatchCount) =>
