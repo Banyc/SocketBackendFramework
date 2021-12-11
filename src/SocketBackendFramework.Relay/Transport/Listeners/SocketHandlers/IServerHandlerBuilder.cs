@@ -4,6 +4,6 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 {
     public interface IServerHandlerBuilder
     {
-        IServerHandler Build(IPAddress ipAddress, int port, string? configId);
+        IServerHandler Build(IPEndPoint localEndPoint, string? configId);
     }
 }

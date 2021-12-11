@@ -1,7 +1,9 @@
+using System.Net;
+
 namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 {
     public interface IClientHandlerBuilder
     {
-        IClientHandler Build(string ipAddress, int port, object? config);
+        IClientHandler Build(IPEndPoint remoteEndPoint, object? config);
     }
 }

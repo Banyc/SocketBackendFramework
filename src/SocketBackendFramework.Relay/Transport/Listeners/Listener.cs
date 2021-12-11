@@ -24,7 +24,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners
 
             // build system socket
             // don't start listening yet
-            this.server = builder.Build(IPAddress.Any, config.ListeningPort, config.SocketHandlerConfigId);
+            this.server = builder.Build(new IPEndPoint(IPAddress.Any, config.ListeningPort), config.SocketHandlerConfigId);
             this.server.ClientConnected += OnTcpServerConnected;
             this.server.ClientDisconnected += OnTcpSessionDisconnected;
             this.server.ClientMessageReceived += OnReceive;

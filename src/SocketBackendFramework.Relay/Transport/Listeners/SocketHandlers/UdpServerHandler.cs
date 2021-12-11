@@ -6,9 +6,9 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 {
     public class UdpServerHandlerBuilder : IServerHandlerBuilder
     {
-        public IServerHandler Build(IPAddress ipAddress, int port, string? configId)
+        public IServerHandler Build(IPEndPoint localEndPoint, string? configId)
         {
-            return new UdpServerHandler(ipAddress, port);
+            return new UdpServerHandler(localEndPoint);
         }
     }
 
@@ -22,9 +22,9 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
         public event ConnectionEventHandler? ClientDisconnected { add { } remove { } }
         public event ReceivedEventHandler? ClientMessageReceived;
 
-        public UdpServerHandler(IPAddress address, int port) : base(address, port)
+        public UdpServerHandler(IPEndPoint localEndPoint) : base(localEndPoint)
         {
-            this.LocalEndPoint = new IPEndPoint(address, port);
+            this.LocalEndPoint = localEndPoint;
         }
 
         protected override void OnStarted()

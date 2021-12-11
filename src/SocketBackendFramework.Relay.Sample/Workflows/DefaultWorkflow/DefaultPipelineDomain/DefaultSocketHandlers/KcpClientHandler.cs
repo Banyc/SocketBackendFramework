@@ -9,11 +9,11 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 {
     public class KcpClientHandlerBuilder : IClientHandlerBuilder
     {
-        public IClientHandler Build(string ipAddress, int port, object? config)
+        public IClientHandler Build(IPEndPoint remoteEndPoint, object? config)
         {
             KcpConfig kcpConfig = (KcpConfig)config!;
             KcpControl kcpControl = new(kcpConfig);
-            return new KcpClientHandler(kcpControl, ipAddress, port);
+            return new KcpClientHandler(kcpControl, remoteEndPoint);
         }
     }
 
@@ -32,7 +32,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private readonly byte[] receiveBuffer = new byte[1400 * 256];
         private readonly byte[] sendBuffer = new byte[1400 * 256];
 
-        public KcpClientHandler(KcpControl kcpControl, string ipAddr, int port) : base(ipAddr, port)
+        public KcpClientHandler(KcpControl kcpControl, IPEndPoint remoteEndPoint) : base(remoteEndPoint)
         {
             this.kcpControl = kcpControl;
             kcpControl.ReceivedCompleteSegment += (sender, completeSegmentBatchCount) =>
@@ -61,7 +61,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                     writtenByteCount = this.kcpControl.Output(this.sendBuffer);
                 }
             };
-            this.RemoteEndPoint = new IPEndPoint(IPAddress.Parse(ipAddr), port);
+            this.RemoteEndPoint = remoteEndPoint;
         }
 
         void IClientHandler.Connect()
@@ -91,13 +91,15 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         {
             // cache the endpoint info
             this.LocalEndPoint = base.Socket!.LocalEndPoint!;
-            this.RemoteEndPoint = base.Socket!.RemoteEndPoint!;
+            // the UDP Socket is not connected
+            // this is null
+            // this.RemoteEndPoint = base.Socket!.RemoteEndPoint!;
 
             this.Connected?.Invoke(
                 this,
                 this.TransportType,
                 this.LocalEndPoint,
-                this.RemoteEndPoint);
+                this.RemoteEndPoint!);
             base.ReceiveAsync();  // correspond to official sample
         }
 

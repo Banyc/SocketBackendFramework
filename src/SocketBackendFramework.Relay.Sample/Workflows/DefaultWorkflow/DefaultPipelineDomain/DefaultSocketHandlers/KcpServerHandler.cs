@@ -21,10 +21,10 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         {
             this.config = config;
         }
-        public IServerHandler Build(IPAddress ipAddress, int port, string? configId)
+        public IServerHandler Build(IPEndPoint localEndPoint, string? configId)
         {
             KcpControlBuilder kcpControlBuilder = new KcpControlBuilder();
-            return new KcpServerHandler(kcpControlBuilder, ipAddress, port, this.config.KcpServerHandlers![configId!]);
+            return new KcpServerHandler(kcpControlBuilder, localEndPoint, this.config.KcpServerHandlers![configId!]);
         }
     }
 
@@ -62,10 +62,10 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private readonly ConcurrentDictionary<EndPoint, ClientInfo> connections = new();
         private readonly TimeSpan connectionTimeout;
 
-        public KcpServerHandler(KcpControlBuilder kcpControlBuilder, IPAddress address, int port, KcpServerHandlerConfig config) : base(address, port)
+        public KcpServerHandler(KcpControlBuilder kcpControlBuilder, IPEndPoint localEndPoint, KcpServerHandlerConfig config) : base(localEndPoint)
         {
             this.kcpControlBuilder = kcpControlBuilder;
-            this.LocalEndPoint = new IPEndPoint(address, port);
+            this.LocalEndPoint = localEndPoint;
             this.connectionTimeout = TimeSpan.FromMilliseconds(config.ConnectionTimeoutMs);
         }
 

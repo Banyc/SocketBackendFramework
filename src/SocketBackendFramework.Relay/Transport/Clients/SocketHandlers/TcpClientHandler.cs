@@ -6,9 +6,9 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 {
     public class TcpClientHandlerBuilder : IClientHandlerBuilder
     {
-        public IClientHandler Build(string ipAddress, int port, object? config)
+        public IClientHandler Build(IPEndPoint remoteEndPoint, object? config)
         {
-            return new TcpClientHandler(ipAddress, port);
+            return new TcpClientHandler(remoteEndPoint);
         }
     }
 
@@ -21,15 +21,16 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
         // null if connection has been established
         private Queue<byte[]>? pendingTransmission = new();
 
-        public TcpClientHandler(string address, int port) : base(address, port)
+        public TcpClientHandler(IPEndPoint remoteEndPoint) : base(remoteEndPoint)
         {
-            this.remoteEndPoint = new IPEndPoint(IPAddress.Parse(address), port);
+            this.remoteEndPoint = remoteEndPoint;
         }
 
         protected override void OnConnected()
         {
             // cache endpoint info
             this.localEndPoint = base.Socket!.LocalEndPoint!;
+            System.Diagnostics.Debug.Assert(base.Socket!.RemoteEndPoint != null);
             this.remoteEndPoint = base.Socket!.RemoteEndPoint!;
 
             this.Connected?.Invoke(

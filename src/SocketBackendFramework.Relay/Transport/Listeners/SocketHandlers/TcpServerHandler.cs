@@ -16,9 +16,9 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
         {
             this.config = config;
         }
-        public IServerHandler Build(IPAddress ipAddress, int port, string? configId)
+        public IServerHandler Build(IPEndPoint localEndPoint, string? configId)
         {
-            return new TcpServerHandler(ipAddress, port,
+            return new TcpServerHandler(localEndPoint,
                                         this.config.TcpServerHandlers![configId!].SessionTimeoutMs);
         }
     }
@@ -47,10 +47,10 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 
         public EndPoint LocalEndPoint { get; }
 
-        public TcpServerHandler(IPAddress address, int port, double tcpSessionTimeoutMs) : base(address, port)
+        public TcpServerHandler(IPEndPoint localEndPoint, double tcpSessionTimeoutMs) : base(localEndPoint)
         {
             this.tcpSessionTimeoutMs = tcpSessionTimeoutMs;
-            this.LocalEndPoint = new IPEndPoint(address, port);
+            this.LocalEndPoint = localEndPoint;
         }
 
         public event ConnectionEventHandler? ClientConnected;

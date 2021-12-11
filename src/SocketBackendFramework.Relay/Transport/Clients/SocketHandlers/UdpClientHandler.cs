@@ -5,9 +5,9 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 {
     public class UdpClientHandlerBuilder : IClientHandlerBuilder
     {
-        public IClientHandler Build(string ipAddress, int port, object? config)
+        public IClientHandler Build(IPEndPoint remoteEndPoint, object? config)
         {
-            return new UdpClientHandler(ipAddress, port);
+            return new UdpClientHandler(remoteEndPoint);
         }
     }
 
@@ -17,9 +17,9 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
         public event ConnectionEventHandler? Disconnected;
         public event ConnectionEventHandler? Connected;
 
-        public UdpClientHandler(string address, int port) : base(address, port)
+        public UdpClientHandler(IPEndPoint remoteEndPoint) : base(remoteEndPoint)
         {
-            this.remoteEndPoint = new IPEndPoint(IPAddress.Parse(address), port);
+            this.remoteEndPoint = remoteEndPoint;
         }
 
         protected override void OnConnected()
