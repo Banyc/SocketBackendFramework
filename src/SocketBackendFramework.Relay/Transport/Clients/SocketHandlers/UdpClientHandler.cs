@@ -26,13 +26,15 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
         {
             // cache the endpoint info
             this.localEndPoint = base.Socket!.LocalEndPoint!;
-            this.remoteEndPoint = base.Socket!.RemoteEndPoint!;
+            // the UDP Socket is not connected
+            // this is null
+            // this.remoteEndPoint = base.Socket!.RemoteEndPoint!;
 
             this.Connected?.Invoke(
                 this,
                 "udp",
                 this.localEndPoint,
-                this.remoteEndPoint);
+                this.remoteEndPoint!);
             base.ReceiveAsync();  // correspond to official sample
         }
 
@@ -76,7 +78,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
         private EndPoint? localEndPoint = null;
         EndPoint? IClientHandler.LocalEndPoint { get => this.localEndPoint; }
 
-        private EndPoint? remoteEndPoint = null;
+        private readonly EndPoint? remoteEndPoint = null;
         EndPoint? IClientHandler.RemoteEndPoint { get => this.remoteEndPoint; }
 
         string IClientHandler.TransportType { get => "udp"; }
