@@ -1,7 +1,6 @@
 using System.Net;
 using NetCoreServer;
 using SocketBackendFramework.Relay.Models.Delegates;
-using SocketBackendFramework.Relay.Models.Transport.PacketContexts;
 using SocketBackendFramework.Relay.Transport.Clients.SocketHandlers;
 
 namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
@@ -25,7 +24,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
 
             this.Connected?.Invoke(
                 this,
-                "tcp",
+                this.TransportType,
                 this.localEndPoint,
                 this.remoteEndPoint);  // TcpServer has already acknowledged the connection
             // base.ReceiveAsync();  // TcpSession will automatically start receiving during connection.
@@ -36,7 +35,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
             base.OnReceived(buffer, offset, size);
             this.Received?.Invoke(
                 this,
-                "tcp",
+                this.TransportType,
                 this.localEndPoint!,
                 this.remoteEndPoint!,
                 buffer, offset, size);
@@ -48,7 +47,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
             base.OnDisconnected();
             this.Disconnected?.Invoke(
                 this,
-                "tcp",
+                this.TransportType,
                 this.localEndPoint!,
                 this.remoteEndPoint!);
         }

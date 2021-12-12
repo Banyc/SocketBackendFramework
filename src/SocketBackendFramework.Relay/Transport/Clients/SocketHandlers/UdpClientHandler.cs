@@ -17,6 +17,8 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
         public event ConnectionEventHandler? Disconnected;
         public event ConnectionEventHandler? Connected;
 
+        public string TransportType => "udp";
+
         public UdpClientHandler(IPEndPoint remoteEndPoint) : base(remoteEndPoint)
         {
             this.remoteEndPoint = remoteEndPoint;
@@ -32,7 +34,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 
             this.Connected?.Invoke(
                 this,
-                "udp",
+                this.TransportType,
                 this.localEndPoint,
                 this.remoteEndPoint!);
             base.ReceiveAsync();  // correspond to official sample
@@ -43,7 +45,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
             base.OnReceived(endpoint, buffer, offset, size);
             this.Received?.Invoke(
                 this,
-                "udp",
+                this.TransportType,
                 this.localEndPoint!,
                 endpoint,
                 buffer, offset, size);
@@ -54,7 +56,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
         {
             this.Disconnected?.Invoke(
                 this,
-                "udp",
+                this.TransportType,
                 this.localEndPoint!,
                 this.remoteEndPoint!);
         }
@@ -80,8 +82,6 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 
         private readonly EndPoint? remoteEndPoint = null;
         EndPoint? IClientHandler.RemoteEndPoint { get => this.remoteEndPoint; }
-
-        string IClientHandler.TransportType { get => "udp"; }
         #endregion
     }
 }

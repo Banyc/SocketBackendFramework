@@ -37,7 +37,7 @@ namespace SocketBackendFramework.Relay.Transport.Listeners.SocketHandlers
         {
             this.ClientMessageReceived?.Invoke(
                 this,
-                "udp",
+                this.TransportType,
                 this.LocalEndPoint,
                 endpoint,
                 buffer, offset, size);

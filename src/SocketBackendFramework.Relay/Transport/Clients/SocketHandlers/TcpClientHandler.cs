@@ -18,6 +18,8 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
         public event ReceivedEventHandler? Received;
         public event ConnectionEventHandler? Disconnected;
 
+        public string TransportType => "tcp";
+
         // null if connection has been established
         private Queue<byte[]>? pendingTransmission = new();
 
@@ -35,7 +37,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 
             this.Connected?.Invoke(
                 this,
-                "tcp",
+                this.TransportType,
                 this.localEndPoint,
                 this.remoteEndPoint);
             lock (this.pendingTransmission!)
@@ -56,7 +58,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
             base.OnReceived(buffer, offset, size);
             this.Received?.Invoke(
                 this,
-                "tcp",
+                this.TransportType,
                 this.localEndPoint!,
                 this.remoteEndPoint!,
                 buffer, offset, size);
@@ -68,7 +70,7 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
             base.OnDisconnected();
             this.Disconnected?.Invoke(
                 this,
-                "tcp",
+                this.TransportType,
                 this.localEndPoint!,
                 this.remoteEndPoint!);
         }
@@ -121,8 +123,6 @@ namespace SocketBackendFramework.Relay.Transport.Clients.SocketHandlers
 
         private EndPoint? remoteEndPoint = null;
         EndPoint? IClientHandler.RemoteEndPoint { get => this.remoteEndPoint; }
-
-        string IClientHandler.TransportType { get => "tcp"; }
         #endregion
     }
 }
