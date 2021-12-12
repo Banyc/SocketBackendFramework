@@ -24,6 +24,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         public void Input(Span<byte> rawData)
         {
             int completeSegmentBatchCount = 0;
+            bool shouldTryOutput = false;
             lock (this)
             {
                 while (true)
@@ -137,7 +138,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                 if (this.shouldSendSmallPacketsNoDelay)
                                 {
                                     // send ack immediately
-                                    this.TryOutput();
+                                    shouldTryOutput = true;
                                 }
                             }
                             break;
@@ -159,9 +160,13 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                     }
                 }
             }
-            if (completeSegmentBatchCount > 0)
+            if (shouldTryOutput)
             {
                 // send ack immediately
+                this.TryOutput();
+            }
+            if (completeSegmentBatchCount > 0)
+            {
                 this.ReceivedCompleteSegment?.Invoke(this, completeSegmentBatchCount);
             }
         }
