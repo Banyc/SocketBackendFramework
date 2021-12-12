@@ -80,7 +80,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         // do NOT call this.TryOutput() within a locked scope
         private void TryOutput()
         {
-            // make sure it's only one thread calling event this.TryingOutput
+            // to make sure it's only one thread calling event this.TryingOutput
             lock (this.tryOutputLock)  // protect this.isTryingOutput
             {
                 if (this.isTryingOutput)
