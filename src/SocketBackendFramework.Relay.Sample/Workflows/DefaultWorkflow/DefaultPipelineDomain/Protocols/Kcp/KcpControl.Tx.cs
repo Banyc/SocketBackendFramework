@@ -7,6 +7,8 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 {
     public partial class KcpControl  // Tx
     {
+        private readonly object txLock = new();
+
         public bool IsStreamMode { get; }
         public uint Mtu { get; set; } = 1400;  // maximum transmission unit
         private uint MaxSegmentDataSize { get => this.Mtu - KcpSegment.DataOffset; }  // maximum segment size
@@ -16,26 +18,29 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         {
             get
             {
-                return Math.Max((int)this.receiveWindowSize - this.outOfOrderQueue.Count, 0);
+                lock (this.outOfOrderQueue)
+                {
+                    return Math.Max((int)this.receiveWindowSize - this.outOfOrderQueue.Count, 0);
+                }
             }
         }
 
         private bool IsFitInSendingQueue(uint sequenceNumber)
         {
-            // even if the remote window size is 0, we still send one segment to probe the updated remote window size
-            return sequenceNumber - this.sendingQueue.SmallestSequenceNumberAllowed < Math.Max(this.remoteWindowSize, 1);
+            lock (this.sendingQueue)
+            {
+                // even if the remote window size is 0, we still send one segment to probe the updated remote window size
+                return sequenceNumber - this.sendingQueue.SmallestSequenceNumberAllowed < Math.Max(this.remoteWindowSize, 1);
+            }
         }
 
         // unsent segments
         private readonly KcpSegmentQueue toSendQueue = new();  // snd_queue
 
-        // sent but unacked segments
-        private readonly KcpSegmentQueue sendingQueue = new();  // snd_buf
-
         public void Send(Span<byte> data)
         {
             bool shouldTryOutputAll = false;
-            lock (this)
+            lock (this.txLock)
             {
                 this.toSendQueue.AddBuffer(data, this.MaxSegmentDataSize, this.IsStreamMode);
 
@@ -62,7 +67,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public int Output(Span<byte> buffer)
         {
-            lock (this)
+            lock (this.txLock)
             {
                 // only stuff bytes within the limit of MTU
                 buffer = buffer[..Math.Min(buffer.Length, (int)this.Mtu)];
@@ -71,6 +76,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
                 // write ack segments
                 // piggyback ack segments
+                lock (this.pendingAckList)
                 {
                     var node = this.pendingAckList.First;
                     while (node != null)
@@ -124,7 +130,10 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                         segment.SequenceNumber = this.nextSequenceNumberToSend++;
                         segment.Timestamp = CurrentTimestamp;
 
-                        this.sendingQueue.Enqueue(segment);
+                        lock (this.sendingQueue)
+                        {
+                            this.sendingQueue.Enqueue(segment);
+                        }
                     }
                     else
                     {
@@ -135,7 +144,11 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 // write push segments
                 // merge all segments in sendingQueue into a single buffer
                 {
-                    LinkedListNode<KcpSegment>? segmentNode = this.sendingQueue.GetFirstNode();
+                    LinkedListNode<KcpSegment>? segmentNode;
+                    lock (this.sendingQueue)
+                    {
+                        segmentNode = this.sendingQueue.GetFirstNode();
+                    }
                     while (true)
                     {
                         if (segmentNode == null)

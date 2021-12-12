@@ -8,8 +8,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 {
     public partial class KcpControl  // Rx
     {
-        // acked but out-of-order segments
-        private readonly SortedDictionary<uint, KcpSegment> outOfOrderQueue = new();  // rcv_buf
+        private readonly object rxLock = new();
 
         // acked and consecutive segments
         private readonly KcpSegmentQueue receivedQueue = new();  // rcv_queue
@@ -25,7 +24,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         {
             int completeSegmentBatchCount = 0;
             bool shouldTryOutput = false;
-            lock (this)
+            lock (this.rxLock)
             {
                 while (true)
                 {
@@ -59,13 +58,16 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
                     this.remoteWindowSize = segment.WindowSize;
 
-
-                    // all segments that are previous to the unacknowledged number should be removed
-                    this.sendingQueue.RemoveAllBefore(segment.UnacknowledgedNumber);
+                    lock (this.sendingQueue)
+                    {
+                        // all segments that are previous to the unacknowledged number should be removed
+                        this.sendingQueue.RemoveAllBefore(segment.UnacknowledgedNumber);
+                    }
 
                     switch (segment.Command)
                     {
                         case Command.Ack:
+                            lock (this.sendingQueue)
                             {
                                 // this specific segment is acknowledged and should be removed
                                 this.sendingQueue.Remove(segment.SequenceNumber);
@@ -84,11 +86,14 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                 }
 
                                 // pending to ack
-                                this.pendingAckList.AddLast(new SequenceNumberTimestampPair()
+                                lock (this.pendingAckList)
                                 {
-                                    SequenceNumber = segment.SequenceNumber,
-                                    Timestamp = segment.Timestamp,
-                                });
+                                    this.pendingAckList.AddLast(new SequenceNumberTimestampPair()
+                                    {
+                                        SequenceNumber = segment.SequenceNumber,
+                                        Timestamp = segment.Timestamp,
+                                    });
+                                }
 
                                 // discard duplicate segments
                                 if (segment.SequenceNumber < this.NextContiguousSequenceNumberToReceive)
@@ -116,22 +121,28 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                                     System.Diagnostics.Debug.Assert(segment.SequenceNumber < this.NextContiguousSequenceNumberToReceive + this.receiveWindowSize);
                                     // this segment is not the next contiguous segment to receive
                                     // this segment is out of order
-                                    // add it to the out-of-order queue
-                                    // implicitly discard duplicate segments
-                                    this.outOfOrderQueue[segment.SequenceNumber] = segment;
+                                    lock (this.outOfOrderQueue)
+                                    {
+                                        // add it to the out-of-order queue
+                                        // implicitly discard duplicate segments
+                                        this.outOfOrderQueue[segment.SequenceNumber] = segment;
+                                    }
                                 }
 
-                                // if the next consecutive segments is in the out-of-order queue, add them to the received queue
-                                while (this.outOfOrderQueue.TryGetValue(this.NextContiguousSequenceNumberToReceive, out KcpSegment? nextSegment))
+                                lock (this.outOfOrderQueue)
                                 {
-                                    System.Diagnostics.Debug.Assert(nextSegment != null);
-                                    this.outOfOrderQueue.Remove(this.NextContiguousSequenceNumberToReceive);
-                                    this.receivedQueue.Enqueue(nextSegment);
-
-                                    if (nextSegment.FragmentCountLeft == 0)
+                                    // if the next consecutive segments is in the out-of-order queue, add them to the received queue
+                                    while (this.outOfOrderQueue.TryGetValue(this.NextContiguousSequenceNumberToReceive, out KcpSegment? nextSegment))
                                     {
-                                        // this is the last segment of the message
-                                        completeSegmentBatchCount += 1;
+                                        System.Diagnostics.Debug.Assert(nextSegment != null);
+                                        this.outOfOrderQueue.Remove(this.NextContiguousSequenceNumberToReceive);
+                                        this.receivedQueue.Enqueue(nextSegment);
+
+                                        if (nextSegment.FragmentCountLeft == 0)
+                                        {
+                                            // this is the last segment of the message
+                                            completeSegmentBatchCount += 1;
+                                        }
                                     }
                                 }
 
@@ -163,7 +174,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             if (shouldTryOutput)
             {
                 // send ack immediately
-                this.TryOutput();
+                Task.Run(() => this.TryOutput());
             }
             if (completeSegmentBatchCount > 0)
             {
@@ -173,7 +184,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public int Receive(Span<byte> buffer)
         {
-            lock (this)
+            lock (this.rxLock)
             {
                 int numBytesAppended = 0;
                 // merge all segments into a single buffer

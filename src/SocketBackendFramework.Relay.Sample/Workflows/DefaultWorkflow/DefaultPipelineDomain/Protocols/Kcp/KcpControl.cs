@@ -23,6 +23,12 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         // sequence numbers to ack
         private readonly LinkedList<SequenceNumberTimestampPair> pendingAckList = new();  // ack list
 
+        // sent but unacked segments
+        private readonly KcpSegmentQueue sendingQueue = new();  // snd_buf
+
+        // acked but out-of-order segments
+        private readonly SortedDictionary<uint, KcpSegment> outOfOrderQueue = new();  // rcv_buf
+
         private Timer? transmissionTimer;
 
         public event EventHandler? TryingOutput;
