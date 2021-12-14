@@ -357,6 +357,9 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
 
             Queue<byte[]> applicationBytesQueue = new Queue<byte[]>();
 
+            TaskCreationOptions taskCreationOptions = TaskCreationOptions.RunContinuationsAsynchronously;
+            TaskCompletionSource<object?> kcpControl2ReceiveTask = new(taskCreationOptions);
+
             kcpControl_1.TryingOutput += (sender, e) =>
             {
                 Console.WriteLine($"kcpControl_1.TryingOutput");
@@ -412,11 +415,17 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     int receivedApplicationByteSize;
                     receivedApplicationByteSize = kcpControl_2.Receive(receivedApplicationBytes);
                     byte[] previousSent;
+                    bool isQueueEmpty;
                     lock (applicationBytesQueue)
                     {
                         previousSent = applicationBytesQueue.Dequeue();
+                        isQueueEmpty = applicationBytesQueue.Count == 0;
                     }
                     Assert.True(previousSent.AsSpan().SequenceEqual(receivedApplicationBytes.AsSpan()[..receivedApplicationByteSize]));
+                    if (isQueueEmpty)
+                    {
+                        kcpControl2ReceiveTask.SetResult(null);
+                    }
                 }
             };
 
@@ -432,7 +441,13 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                 kcpControl_1.Send(applicationBytes);
             }
 
-            await Task.Delay(20000);
+            Task timeout = Task.Delay(20000);
+            Task testTask = await Task.WhenAny(kcpControl2ReceiveTask.Task, timeout);
+
+            if (!kcpControl2ReceiveTask.Task.IsCompleted)
+            {
+                throw new TimeoutException();
+            }
 
             lock (applicationBytesQueue)
             {
@@ -440,6 +455,10 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
             }
         }
 
+        // - ApplicationBytesAreABitLong
+        // - MoreEventHandling
+        // - PacketLoss
+        // - GoBothWays
         [Fact]
         public async Task ApplicationBytesAreABitLongWithMoreEventHandlingAndPacketLossGoBothWaysAsync()
         {
@@ -602,8 +621,17 @@ namespace tests.SocketBackendFramework.Relay.Sample.Tests
                     kcpControl_2.Send(applicationBytes);
                 }
             });
+            
+            Task timeout = Task.Delay(TimeSpan.FromSeconds(20));
 
-            await Task.WhenAll(kcpControl1SendTask, kcpControl2SendTask, kcpControl1ReceiveTask.Task, kcpControl2ReceiveTask.Task);
+            Task testTask = Task.WhenAll(kcpControl1SendTask, kcpControl2SendTask, kcpControl1ReceiveTask.Task, kcpControl2ReceiveTask.Task);
+            await Task.WhenAny(testTask, timeout);
+
+            if (!testTask.IsCompleted)
+            {
+                throw new TimeoutException();
+            }
+
             stopwatch.Stop();
             System.Diagnostics.Debug.WriteLine($"{stopwatch.ElapsedMilliseconds} ms");
 
