@@ -87,7 +87,7 @@ namespace SocketBackendFramework.Relay.Transport
 
         private void SendApplicationMessage(UpwardPacketContext context)
         {
-            if (context.ClientConfig == null)
+            if (context.NewClientConfig == null)
             {
                 if (this.listeners.ContainsKey(context.FiveTuples!.Local!.Port))
                 {
@@ -101,7 +101,7 @@ namespace SocketBackendFramework.Relay.Transport
             else
             {
                 // create a dedicated client to send the packet
-                TransportClient newClient = new(context.ClientConfig, this.clientBuilders[context.ClientConfig.TransportType!], this.transportAgentIdCounter++);
+                TransportClient newClient = new(context.NewClientConfig, this.clientBuilders[context.NewClientConfig.TransportType!], this.transportAgentIdCounter++);
                 newClient.Connected += (sender, transportType, localEndPoint, remoteEndPoint) => {
                     TransportClient transportClient = (TransportClient)sender;
                     this.clients[transportClient.LocalIPEndPoint!.Port] = transportClient;

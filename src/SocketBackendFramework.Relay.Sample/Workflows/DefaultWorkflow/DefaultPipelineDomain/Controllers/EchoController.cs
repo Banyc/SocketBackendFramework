@@ -48,7 +48,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 {
                     remotePort = 8082;
                 }
-                context.Response.PacketContext.ClientConfig = new()
+                context.Response.PacketContext.NewClientConfig = new()
                 {
                     ClientDisposeTimeout = TimeSpan.FromSeconds(2),
                     RemoteAddress = context.Request!.PacketContext!.FiveTuples!.Remote!.Address.ToString(),

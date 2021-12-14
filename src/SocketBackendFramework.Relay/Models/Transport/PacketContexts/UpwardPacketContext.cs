@@ -19,6 +19,7 @@ namespace SocketBackendFramework.Relay.Models.Transport.PacketContexts
         public long PacketRawSize { get; set; }
 
         // if not null, create a dedicated socket client
-        public TransportClientConfig? ClientConfig { get; set; }
+        public TransportClientConfig? NewClientConfig { get; set; }
+        public object? CustomContext { get; set; }
     }
 }

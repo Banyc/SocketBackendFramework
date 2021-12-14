@@ -117,7 +117,6 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                     }
                 };
 
-                // TODO: add timeout timer
                 Timer timeoutTimer = new Timer(this.connectionTimeout.TotalMilliseconds);
                 timeoutTimer.Elapsed += (sender, e) =>
                 {
