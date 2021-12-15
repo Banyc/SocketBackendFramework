@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Timers;
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Protocols.Kcp.Models;
 
@@ -58,9 +59,9 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 this.transmissionTimer = new Timer(10);
             }
             this.transmissionTimer.AutoReset = false;
-            this.transmissionTimer.Elapsed += (sender, e) =>
+            this.transmissionTimer.Elapsed += async (sender, e) =>
             {
-                this.TryOutput();
+                await this.TryOutputAsync(shouldStartNewTask: false);
                 // the timer could have already been disposed before the lock was acquired
                 this.transmissionTimer?.Start();
             };
@@ -84,9 +85,14 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         // thread-safe
         // ask for external event handlers of this.TryingOutput calling this.Output()
         // do NOT call this.TryOutput() within a locked scope
-        private void TryOutput()
+        // param: shouldStartNewTask: set true except for calling from the timer event
+        private async Task TryOutputAsync(bool shouldStartNewTask)
         {
             // to make sure it's only one thread calling event this.TryingOutput
+            if (this.isTryingOutput)
+            {
+                return;
+            }
             lock (this.tryOutputLock)  // protect this.isTryingOutput
             {
                 if (this.isTryingOutput)
@@ -97,7 +103,14 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             }
 
             // the output order is guaranteed since there is only one thread calling this event
-            this.TryingOutput?.Invoke(this, EventArgs.Empty);
+            if (shouldStartNewTask)
+            {
+                await Task.Run(() => this.TryingOutput?.Invoke(this, EventArgs.Empty));
+            }
+            else
+            {
+                this.TryingOutput?.Invoke(this, EventArgs.Empty);
+            }
             this.isTryingOutput = false;
         }
     }

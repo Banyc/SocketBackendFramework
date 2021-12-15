@@ -19,6 +19,7 @@ else
 {
     header[0] = (byte)2;  // EchoByClient
 }
+header[0] = (byte)3;  // relay
 string hello = "hello";
 
 while (true)

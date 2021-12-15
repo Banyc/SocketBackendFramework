@@ -5,6 +5,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         NoReply,
         Echo,
         EchoByClient,
+        Relay,
     }
 
     public class DefaultPacketHeader

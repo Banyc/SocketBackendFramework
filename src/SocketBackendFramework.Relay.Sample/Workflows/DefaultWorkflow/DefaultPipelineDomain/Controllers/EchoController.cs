@@ -28,6 +28,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public override void Request(DefaultMiddlewareContext context)
         {
+            System.Diagnostics.Debug.WriteLine($"Echo: {context.Request!.PacketContext!.FiveTuples!.Local}<-{context.Request.PacketContext.FiveTuples.Remote}");
             context.Response = new();
             context.Response.PacketContext.ActionType = UpwardActionType.SendApplicationMessage;
             context.Response.PacketContext.FiveTuples = context.Request!.PacketContext!.FiveTuples;

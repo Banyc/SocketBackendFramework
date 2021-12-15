@@ -35,10 +35,12 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow
             EchoController echoController = new(defaultPipelineDomain.Pipeline);
             GreetController greetController = new(defaultPipelineDomain.Pipeline);
             NoReplyController noReplyController = new();
+            RelayController relayController = new(this.configRoot.RelayController!, defaultPipelineDomain.Pipeline);
             // add controllers to controllers mapper
             defaultControllersMapper.AddController(echoController);
             defaultControllersMapper.AddController(noReplyController);
             defaultControllersMapper.AddController(greetController);
+            defaultControllersMapper.AddController(relayController);
         }
     }
 }

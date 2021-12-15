@@ -61,7 +61,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             if (shouldTryOutputAll)
             {
                 // detach KCP output from user thread
-                Task.Run(() => this.TryOutput());
+                _ = this.TryOutputAsync(shouldStartNewTask: true);
             }
         }
 

@@ -145,11 +145,19 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 segment[3] = (byte)((value >> 24) & 0xff);
             }
         }  // len
-        public Span<byte> Data
+        public Span<byte> DataWriteBuffer
         {
             get
             {
                 return Buffer.Span[(int)DataOffset..];
+            }
+        }
+
+        public Span<byte> ActualData
+        {
+            get
+            {
+                return Buffer.Span[(int)DataOffset..(int)(DataOffset + DataLength)];
             }
         }
 
@@ -196,7 +204,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         // return the amount of data being appended to this segment
         public int Append(Span<byte> newData)
         {
-            var freeSpace = this.Data[(int)this.DataLength..];
+            var freeSpace = this.DataWriteBuffer[(int)this.DataLength..];
             int numBytesToAppend = Math.Min(freeSpace.Length, newData.Length);
             newData[0..numBytesToAppend].CopyTo(freeSpace);
             this.DataLength += (uint)numBytesToAppend;

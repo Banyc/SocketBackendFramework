@@ -44,5 +44,11 @@
                 "ConnectionTimeoutMs": 2000
             }
         }
+    },
+    "RelayController": {
+        "TransportType": "kcp",
+        "RemoteAddress": "127.0.0.1",
+        "RemotePort": 8083,
+        "ClientDisposeTimeoutMs": 2000
     }
 }
