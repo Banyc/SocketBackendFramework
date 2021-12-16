@@ -1,4 +1,5 @@
 using System;
+using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Protocols.Kcp.Models;
 
 namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Protocols.Kcp
 {
@@ -9,14 +10,6 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         public uint Mtu { get; set; } = 1400;  // maximum transmission unit
         private readonly Random random = new();
 
-        // public void Send(uint conversationId, Span<byte> data)
-        // {
-        //     lock (this.txLock)
-        //     {
-        //         this.kcpControls[conversationId].Send(data);
-        //     }
-        // }
-
         public int Output(Span<byte> buffer)
         {
             lock (this.txLock)
@@ -25,14 +18,14 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 buffer = buffer[..Math.Min(buffer.Length, (int)this.Mtu)];
 
                 int numBytesAppended = 0;
-                
-                lock (this.kcpControls)
+
+                lock (this.pendingOutputRequests)
                 {
-                    int maxRound = this.kcpControls.Count;
-                    for (int i = 0; i < maxRound && numBytesAppended < buffer.Length; i++)
+                    while (this.pendingOutputRequests.Count > 0 && numBytesAppended + KcpSegment.DataOffset < buffer.Length)
                     {
-                        int offset = this.random.Next(this.kcpControls.Count);
-                        numBytesAppended += this.kcpControls[this.baseConversationId + (uint)offset].Output(buffer[numBytesAppended..]);
+                        KcpControl kcpControl = this.pendingOutputRequests.Dequeue();
+
+                        numBytesAppended += kcpControl.Output(buffer[numBytesAppended..]);
                     }
                 }
 

@@ -48,12 +48,5 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 }
             }
         }
-        // public int Receive(uint conversationId, Span<byte> buffer)
-        // {
-        //     lock (this.rxLock)
-        //     {
-        //         return this.kcpControls[conversationId].Receive(buffer);
-        //     }
-        // }
     }
 }

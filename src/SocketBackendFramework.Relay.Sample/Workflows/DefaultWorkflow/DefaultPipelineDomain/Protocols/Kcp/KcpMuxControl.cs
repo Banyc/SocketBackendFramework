@@ -9,13 +9,15 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
     {
         private readonly Dictionary<uint, KcpControl> kcpControls = new();
 
-        // private Timer? transmissionTimer;
+        // private readonly Timer? outputTimer;
         private readonly KcpConfig config;
         private readonly uint baseConversationId;
 
         public event EventHandler? TryingOutput;
 
         public string Name { get; set; }
+
+        private readonly UniqueQueue<KcpControl> pendingOutputRequests = new();
 
         public KcpMuxControl(KcpConfig config, string name)  // onOutput(byte[] data, int length)
         {
@@ -25,21 +27,21 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
             // if (config.OutputDuration != null)
             // {
-            //     this.transmissionTimer = new Timer(config.OutputDuration.Value.TotalMilliseconds);
+            //     this.outputTimer = new Timer(config.OutputDuration.Value.TotalMilliseconds);
             // }
             // else
             // {
-            //     this.transmissionTimer = new Timer(10);
+            //     this.outputTimer = new Timer(10);
             // }
-            // this.transmissionTimer.AutoReset = false;
-            // this.transmissionTimer.Elapsed += (sender, e) =>
+            // this.outputTimer.AutoReset = false;
+            // this.outputTimer.Elapsed += (sender, e) =>
             // {
             //     this.TryOutput();
             //     // the timer could have already been disposed before the lock was acquired
-            //     this.transmissionTimer?.Start();
+            //     this.outputTimer?.Start();
             // };
 
-            // this.transmissionTimer?.Start();
+            // this.outputTimer?.Start();
         }
 
         public void Dispose()
@@ -47,9 +49,9 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             System.Diagnostics.Debug.WriteLine("Disposing KcpMuxControl");
             lock (this.kcpControls)
             {
-                // this.transmissionTimer?.Stop();
-                // this.transmissionTimer?.Dispose();
-                // this.transmissionTimer = null;
+                // this.outputTimer?.Stop();
+                // this.outputTimer?.Dispose();
+                // this.outputTimer = null;
                 foreach (var (_, kcpControl) in this.kcpControls)
                 {
                     kcpControl.Dispose();
@@ -62,6 +64,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         public KcpControl NewKcpControl()
         {
             KcpConfig config = (KcpConfig)this.config.Clone();
+            // config.OutputDuration = null;  // stop the outputTimer in the new KcpControl
             KcpControl kcpControl;
             lock (this.kcpControls)
             {
@@ -70,6 +73,14 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
                 kcpControl.TryingOutput += (sender, e) =>
                 {
+                    if (this.TryingOutput == null)
+                    {
+                        return;
+                    }
+                    lock (this.pendingOutputRequests)
+                    {
+                        this.pendingOutputRequests.Enqueue(kcpControl);
+                    }
                     this.TryOutput();
                 };
 
@@ -86,6 +97,10 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private void TryOutput()
         {
             // to make sure it's only one thread calling event this.TryingOutput
+            if (this.isTryingOutput)
+            {
+                return;
+            }
             lock (this.tryOutputLock)  // protect this.isTryingOutput
             {
                 if (this.isTryingOutput)
@@ -95,9 +110,21 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 this.isTryingOutput = true;
             }
 
-            // the output order is guaranteed since there is only one thread calling this event
-            this.TryingOutput?.Invoke(this, EventArgs.Empty);
-            this.isTryingOutput = false;
+            while (true)
+            {
+                // the output order is guaranteed since there is only one thread calling this event
+                this.TryingOutput?.Invoke(this, EventArgs.Empty);
+
+                lock (this.pendingOutputRequests)
+                {
+                    // make sure all requests are processed
+                    if (this.pendingOutputRequests.Count == 0)
+                    {
+                        this.isTryingOutput = false;
+                        return;
+                    }
+                }
+            }
         }
     }
 }
