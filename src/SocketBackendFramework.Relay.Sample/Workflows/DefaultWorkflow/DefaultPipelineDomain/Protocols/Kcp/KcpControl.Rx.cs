@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Protocols.Kcp.Models;
 
 namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Protocols.Kcp
@@ -22,159 +20,161 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public void Input(Span<byte> rawData)
         {
+            while (true)
+            {
+                if (rawData.Length == 0)
+                {
+                    // no more data
+                    break;
+                }
+                if (rawData.Length < KcpSegment.DataOffset)
+                {
+                    throw new Exception("raw packet length is less than data offset");
+                }
+
+                KcpSegment segment = new KcpSegment(rawData);
+
+                if (segment.DataWriteBuffer.Length < segment.DataLength)
+                {
+                    throw new Exception("raw packet length is not large enough to hold all data of the KCP segment");
+                }
+                if (segment.Command < Command.Push || segment.Command > Command.Ack)
+                {
+                    throw new Exception("segment command is not valid");
+                }
+                rawData = rawData[(int)(KcpSegment.DataOffset + segment.DataLength)..];
+
+                // the packet is valid, process it
+                this.Input(segment);
+            }
+        }
+
+        public void Input(KcpSegment segment)
+        {
             int completeSegmentBatchCount = 0;
             bool shouldTryOutput = false;
             lock (this.rxLock)
             {
-                while (true)
+                // the packet is valid, process it
+
+                this.remoteWindowSize = segment.WindowSize;
+
+                lock (this.sendingQueue)
                 {
-                    if (rawData.Length == 0)
-                    {
-                        // no more data
+                    // all segments that are previous to the unacknowledged number should be removed
+                    this.sendingQueue.RemoveAllBefore(segment.UnacknowledgedNumber);
+                }
+
+                switch (segment.Command)
+                {
+                    case Command.Ack:
+                        lock (this.sendingQueue)
+                        {
+                            // this specific segment is acknowledged and should be removed
+                            this.sendingQueue.Remove(segment.SequenceNumber);
+                        }
                         break;
-                    }
-                    if (rawData.Length < KcpSegment.DataOffset)
-                    {
-                        throw new Exception("raw packet length is less than data offset");
-                    }
+                    case Command.Push:
+                        {
+                            // application data
 
-                    KcpSegment segment = new KcpSegment(rawData);
-
-                    if (segment.ConversationId != this.conversationId)
-                    {
-                        throw new Exception("segment conversation id is not equal to the KCP conversation id");
-                    }
-                    if (segment.Data.Length < segment.DataLength)
-                    {
-                        throw new Exception("raw packet length is not large enough to hold all data of the KCP segment");
-                    }
-                    if (segment.Command < Command.Push || segment.Command > Command.Ack)
-                    {
-                        throw new Exception("segment command is not valid");
-                    }
-                    rawData = rawData[(int)(KcpSegment.DataOffset + segment.DataLength)..];
-
-                    // the packet is valid, process it
-
-                    this.remoteWindowSize = segment.WindowSize;
-
-                    lock (this.sendingQueue)
-                    {
-                        // all segments that are previous to the unacknowledged number should be removed
-                        this.sendingQueue.RemoveAllBefore(segment.UnacknowledgedNumber);
-                    }
-
-                    switch (segment.Command)
-                    {
-                        case Command.Ack:
-                            lock (this.sendingQueue)
+                            // discard invalid segments
+                            if ((int)segment.SequenceNumber - (int)this.receivedQueue.SmallestSequenceNumberAllowed > this.receiveWindowSize)
                             {
-                                // this specific segment is acknowledged and should be removed
-                                this.sendingQueue.Remove(segment.SequenceNumber);
+                                // this segment is out of the receive window
+                                // discard it
+                                return;
                             }
-                            break;
-                        case Command.Push:
+
+                            // pending to ack
+                            lock (this.pendingAckList)
                             {
-                                // application data
-
-                                // discard invalid segments
-                                if ((int)segment.SequenceNumber - (int)this.receivedQueue.SmallestSequenceNumberAllowed > this.receiveWindowSize)
+                                this.pendingAckList.AddLast(new SequenceNumberTimestampPair()
                                 {
-                                    // this segment is out of the receive window
-                                    // discard it
-                                    continue;
+                                    SequenceNumber = segment.SequenceNumber,
+                                    Timestamp = segment.Timestamp,
+                                });
+                            }
+
+                            // discard duplicate segments
+                            if (segment.SequenceNumber < this.NextContiguousSequenceNumberToReceive)
+                            {
+                                // this segment is a duplicate
+                                // discard it
+                                return;
+                            }
+
+                            if (segment.SequenceNumber == this.NextContiguousSequenceNumberToReceive)
+                            {
+                                // this segment is the next contiguous segment to receive
+                                // add it to the received queue
+                                this.receivedQueue.Enqueue(segment);
+
+                                if (segment.FragmentCountLeft == 0)
+                                {
+                                    // this is the last segment of the message
+                                    completeSegmentBatchCount += 1;
                                 }
-
-                                // pending to ack
-                                lock (this.pendingAckList)
+                            }
+                            else
+                            {
+                                System.Diagnostics.Debug.Assert(segment.SequenceNumber > this.NextContiguousSequenceNumberToReceive);
+                                System.Diagnostics.Debug.Assert(segment.SequenceNumber < this.NextContiguousSequenceNumberToReceive + this.receiveWindowSize);
+                                // this segment is not the next contiguous segment to receive
+                                // this segment is out of order
+                                lock (this.outOfOrderQueue)
                                 {
-                                    this.pendingAckList.AddLast(new SequenceNumberTimestampPair()
-                                    {
-                                        SequenceNumber = segment.SequenceNumber,
-                                        Timestamp = segment.Timestamp,
-                                    });
+                                    // add it to the out-of-order queue
+                                    // implicitly discard duplicate segments
+                                    this.outOfOrderQueue[segment.SequenceNumber] = segment;
                                 }
+                            }
 
-                                // discard duplicate segments
-                                if (segment.SequenceNumber < this.NextContiguousSequenceNumberToReceive)
+                            lock (this.outOfOrderQueue)
+                            {
+                                // if the next consecutive segments is in the out-of-order queue, add them to the received queue
+                                while (this.outOfOrderQueue.TryGetValue(this.NextContiguousSequenceNumberToReceive, out KcpSegment? nextSegment))
                                 {
-                                    // this segment is a duplicate
-                                    // discard it
-                                    continue;
-                                }
+                                    System.Diagnostics.Debug.Assert(nextSegment != null);
+                                    this.outOfOrderQueue.Remove(this.NextContiguousSequenceNumberToReceive);
+                                    this.receivedQueue.Enqueue(nextSegment);
 
-                                if (segment.SequenceNumber == this.NextContiguousSequenceNumberToReceive)
-                                {
-                                    // this segment is the next contiguous segment to receive
-                                    // add it to the received queue
-                                    this.receivedQueue.Enqueue(segment);
-
-                                    if (segment.FragmentCountLeft == 0)
+                                    if (nextSegment.FragmentCountLeft == 0)
                                     {
                                         // this is the last segment of the message
                                         completeSegmentBatchCount += 1;
                                     }
                                 }
-                                else
-                                {
-                                    System.Diagnostics.Debug.Assert(segment.SequenceNumber > this.NextContiguousSequenceNumberToReceive);
-                                    System.Diagnostics.Debug.Assert(segment.SequenceNumber < this.NextContiguousSequenceNumberToReceive + this.receiveWindowSize);
-                                    // this segment is not the next contiguous segment to receive
-                                    // this segment is out of order
-                                    lock (this.outOfOrderQueue)
-                                    {
-                                        // add it to the out-of-order queue
-                                        // implicitly discard duplicate segments
-                                        this.outOfOrderQueue[segment.SequenceNumber] = segment;
-                                    }
-                                }
-
-                                lock (this.outOfOrderQueue)
-                                {
-                                    // if the next consecutive segments is in the out-of-order queue, add them to the received queue
-                                    while (this.outOfOrderQueue.TryGetValue(this.NextContiguousSequenceNumberToReceive, out KcpSegment? nextSegment))
-                                    {
-                                        System.Diagnostics.Debug.Assert(nextSegment != null);
-                                        this.outOfOrderQueue.Remove(this.NextContiguousSequenceNumberToReceive);
-                                        this.receivedQueue.Enqueue(nextSegment);
-
-                                        if (nextSegment.FragmentCountLeft == 0)
-                                        {
-                                            // this is the last segment of the message
-                                            completeSegmentBatchCount += 1;
-                                        }
-                                    }
-                                }
-
-                                if (this.shouldSendSmallPacketsNoDelay)
-                                {
-                                    // send ack immediately
-                                    shouldTryOutput = true;
-                                }
                             }
-                            break;
-                        case Command.WindowProbe:
+
+                            if (this.shouldSendSmallPacketsNoDelay)
                             {
+                                // send ack immediately
+                                shouldTryOutput = true;
+                            }
+                        }
+                        break;
+                    case Command.WindowProbe:
+                        {
 
-                            }
-                            break;
-                        case Command.WindowSize:
-                            {
+                        }
+                        break;
+                    case Command.WindowSize:
+                        {
 
-                            }
-                            break;
-                        default:
-                            {
-                                throw new Exception("segment command is not valid");
-                            }
-                            // break;
-                    }
+                        }
+                        break;
+                    default:
+                        {
+                            throw new Exception("segment command is not valid");
+                        }
+                        // break;
                 }
             }
             if (shouldTryOutput)
             {
                 // send ack immediately
-                Task.Run(() => this.TryOutput());
+                _ = this.TryOutputAsync(shouldStartNewTask: true);
             }
             if (completeSegmentBatchCount > 0)
             {
@@ -198,7 +198,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                     }
                     KcpSegment segment = segmentNode.Value;
 
-                    if (numBytesAppended + segment.Data.Length > buffer.Length)
+                    if (numBytesAppended + segment.ActualData.Length > buffer.Length)
                     {
                         // the buffer is not large enough to hold all data
                         break;
@@ -210,8 +210,8 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                         break;
                     }
 
-                    segment.Data.CopyTo(buffer[numBytesAppended..]);
-                    numBytesAppended += segment.Data.Length;
+                    segment.ActualData.CopyTo(buffer[numBytesAppended..]);
+                    numBytesAppended += segment.ActualData.Length;
 
                     this.receivedQueue.Remove(segmentNode);
 
