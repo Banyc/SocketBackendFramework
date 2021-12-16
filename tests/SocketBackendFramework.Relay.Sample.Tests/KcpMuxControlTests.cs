@@ -49,23 +49,23 @@ namespace SocketBackendFramework.Relay.Sample.Tests
 
             for (int i = 0; i < pathCount; i++)
             {
-                (uint conversationId1, KcpControl kcpControl1) = kcpMuxControl1.AddKcpControl();
-                (uint conversationId2, KcpControl kcpControl2) = kcpMuxControl2.AddKcpControl();
+                KcpControl kcpControl1 = kcpMuxControl1.NewKcpControl();
+                KcpControl kcpControl2 = kcpMuxControl2.NewKcpControl();
                 Queue<byte[]> sentBytes1 = new();
                 Queue<byte[]> sentBytes2 = new();
                 TaskCreationOptions taskCreationOptions = TaskCreationOptions.RunContinuationsAsynchronously;
                 TaskCompletionSource<object?> receiveTask1 = new(taskCreationOptions);
                 TaskCompletionSource<object?> receiveTask2 = new(taskCreationOptions);
-                kcpControls1.Add(conversationId1, new()
+                kcpControls1.Add(kcpControl1.ConversationId, new()
                 {
-                    ConversationId = conversationId1,
+                    ConversationId = kcpControl1.ConversationId,
                     Control = kcpControl1,
                     SentBytes = sentBytes1,
                     ReceiveTask = receiveTask1
                 });
-                kcpControls2.Add(conversationId2, new()
+                kcpControls2.Add(kcpControl2.ConversationId, new()
                 {
-                    ConversationId = conversationId2,
+                    ConversationId = kcpControl2.ConversationId,
                     Control = kcpControl2,
                     SentBytes = sentBytes2,
                     ReceiveTask = receiveTask2
@@ -296,23 +296,23 @@ namespace SocketBackendFramework.Relay.Sample.Tests
 
             for (int i = 0; i < pathCount; i++)
             {
-                (uint conversationId1, KcpControl kcpControl1) = kcpMuxControl1.AddKcpControl();
-                (uint conversationId2, KcpControl kcpControl2) = kcpMuxControl2.AddKcpControl();
+                KcpControl kcpControl1 = kcpMuxControl1.NewKcpControl();
+                KcpControl kcpControl2 = kcpMuxControl2.NewKcpControl();
                 Queue<byte[]> sentBytes1 = new();
                 Queue<byte[]> sentBytes2 = new();
                 TaskCreationOptions taskCreationOptions = TaskCreationOptions.RunContinuationsAsynchronously;
                 TaskCompletionSource<object?> receiveTask1 = new(taskCreationOptions);
                 TaskCompletionSource<object?> receiveTask2 = new(taskCreationOptions);
-                kcpControls1.Add(conversationId1, new()
+                kcpControls1.Add(kcpControl1.ConversationId, new()
                 {
-                    ConversationId = conversationId1,
+                    ConversationId = kcpControl1.ConversationId,
                     Control = kcpControl1,
                     SentBytes = sentBytes1,
                     ReceiveTask = receiveTask1
                 });
-                kcpControls2.Add(conversationId2, new()
+                kcpControls2.Add(kcpControl2.ConversationId, new()
                 {
-                    ConversationId = conversationId2,
+                    ConversationId = kcpControl2.ConversationId,
                     Control = kcpControl2,
                     SentBytes = sentBytes2,
                     ReceiveTask = receiveTask2

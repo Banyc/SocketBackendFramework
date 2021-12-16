@@ -10,8 +10,8 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private readonly Dictionary<uint, KcpControl> kcpControls = new();
 
         // private Timer? transmissionTimer;
-        private KcpConfig config;
-        private uint baseConversationId;
+        private readonly KcpConfig config;
+        private readonly uint baseConversationId;
 
         public event EventHandler? TryingOutput;
 
@@ -59,7 +59,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             GC.SuppressFinalize(this);
         }
 
-        public (uint, KcpControl) AddKcpControl()
+        public KcpControl NewKcpControl()
         {
             KcpConfig config = (KcpConfig)this.config.Clone();
             KcpControl kcpControl;
@@ -75,7 +75,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
                 this.kcpControls[config.ConversationId] = kcpControl;
             }
-            return (config.ConversationId, kcpControl);
+            return kcpControl;
         }
 
         private bool isTryingOutput = false;

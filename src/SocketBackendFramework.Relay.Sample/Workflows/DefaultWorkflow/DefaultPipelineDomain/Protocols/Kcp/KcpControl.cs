@@ -14,7 +14,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
             public uint Timestamp;
         }
 
-        private readonly uint conversationId;
+        public uint ConversationId { get; }
         private readonly bool shouldSendSmallPacketsNoDelay;
         private readonly uint receiveWindowSize;  // rcv_wnd  // out-of-order queue size
         private uint remoteWindowSize = 0;
@@ -37,7 +37,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
         public KcpControl(KcpConfig config)  // onOutput(byte[] data, int length)
         {
-            this.conversationId = config.ConversationId;
+            this.ConversationId = config.ConversationId;
             this.IsStreamMode = config.IsStreamMode;
             this.receiveWindowSize = config.ReceiveWindowSize;
             this.shouldSendSmallPacketsNoDelay = config.ShouldSendSmallPacketsNoDelay;

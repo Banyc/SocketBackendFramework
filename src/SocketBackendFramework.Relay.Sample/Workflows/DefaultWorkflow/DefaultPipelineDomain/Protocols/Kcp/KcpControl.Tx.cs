@@ -90,7 +90,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                         // construct ack segment
                         KcpSegment segment = new KcpSegment(0)
                         {
-                            ConversationId = this.conversationId,
+                            ConversationId = this.ConversationId,
                             Command = Command.Ack,
                             FragmentCountLeft = 0,
                             WindowSize = (ushort)this.SpaceLeftInOutOfOrderQueue,
@@ -121,7 +121,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                         System.Diagnostics.Debug.Assert(segment != null);
 
                         // initialize segment headers
-                        segment.ConversationId = this.conversationId;
+                        segment.ConversationId = this.ConversationId;
                         segment.Command = Command.Push;
                         // segment.FragmentCount = segment.FragmentCount;
                         segment.WindowSize = (ushort)this.SpaceLeftInOutOfOrderQueue;
