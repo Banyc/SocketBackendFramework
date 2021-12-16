@@ -7,7 +7,7 @@ using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipel
 using SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultPipelineDomain.Protocols.Kcp.Models;
 using Xunit;
 
-namespace tests.SocketBackendFramework.Relay.Sample.Tests
+namespace SocketBackendFramework.Relay.Sample.Tests
 {
     public class KcpControlTests
     {
