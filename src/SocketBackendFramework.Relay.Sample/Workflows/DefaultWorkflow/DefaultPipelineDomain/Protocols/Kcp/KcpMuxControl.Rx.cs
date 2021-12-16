@@ -41,7 +41,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                     {
                         if (this.kcpControls.Count != 0)
                         {
-                            this.kcpControls?[segment.ConversationId].Input(segment);
+                            this.kcpControls[segment.ConversationId].Input(segment);
                         }
                         // else it means this is disposed.
                     }
