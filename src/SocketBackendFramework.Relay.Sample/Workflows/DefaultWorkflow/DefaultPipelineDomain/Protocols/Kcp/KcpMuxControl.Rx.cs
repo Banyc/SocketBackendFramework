@@ -23,7 +23,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                         throw new Exception("raw packet length is less than data offset");
                     }
 
-                    KcpSegment segment = new KcpSegment(rawData);
+                    KcpSegment segment = new(rawData);
 
                     if (segment.DataWriteBuffer.Length < segment.DataLength)
                     {
@@ -48,7 +48,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 }
             }
         }
-        // public int Receie(uint conversationId, Span<byte> buffer)
+        // public int Receive(uint conversationId, Span<byte> buffer)
         // {
         //     lock (this.rxLock)
         //     {
