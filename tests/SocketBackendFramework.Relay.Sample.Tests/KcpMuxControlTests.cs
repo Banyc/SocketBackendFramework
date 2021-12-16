@@ -27,6 +27,11 @@ namespace SocketBackendFramework.Relay.Sample.Tests
         [Fact]
         public async Task InactiveKcpMuxControlTest()
         {
+            // hyperparameters
+            int pathCount = 10;
+            int numTx = 300;
+            TimeSpan timeout = TimeSpan.FromSeconds(40);
+
             Random random = new Random();
             KcpConfig config = new()
             {
@@ -42,7 +47,6 @@ namespace SocketBackendFramework.Relay.Sample.Tests
             Dictionary<uint, kcpControlInfo> kcpControls1 = new();
             Dictionary<uint, kcpControlInfo> kcpControls2 = new();
 
-            int pathCount = 10;
             for (int i = 0; i < pathCount; i++)
             {
                 (uint conversationId1, KcpControl kcpControl1) = kcpMuxControl1.AddKcpControl();
@@ -179,8 +183,6 @@ namespace SocketBackendFramework.Relay.Sample.Tests
             // activate stopwatch
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            int numTx = 300;
-
             // kcpControl1 sends application bytes
             foreach ((uint conversationIdKey, kcpControlInfo info) in kcpControls1)
             {
@@ -232,13 +234,13 @@ namespace SocketBackendFramework.Relay.Sample.Tests
                 });
             }
 
-            Task timeout = Task.Delay(TimeSpan.FromSeconds(40));
+            Task timeoutTask = Task.Delay(timeout);
 
             List<Task> testTasks = new();
             testTasks.AddRange(kcpControls1.Select(keyValuePair => keyValuePair.Value.ReceiveTask.Task));
             testTasks.AddRange(kcpControls2.Select(keyValuePair => keyValuePair.Value.ReceiveTask.Task));
             Task testTask = Task.WhenAll(testTasks);
-            await Task.WhenAny(testTask, timeout);
+            await Task.WhenAny(testTask, timeoutTask);
 
             if (!testTask.IsCompleted)
             {
@@ -268,9 +270,15 @@ namespace SocketBackendFramework.Relay.Sample.Tests
         // - MoreEventHandling
         // - PacketLoss
         // - GoBothWays
+        // - Active KcpMuxControl
         [Fact]
         public async Task ActiveKcpMuxControlTest()
         {
+            // hyperparameters
+            int pathCount = 10;
+            int numTx = 30;
+            TimeSpan timeout = TimeSpan.FromSeconds(60);
+
             Random random = new Random();
             KcpConfig config = new()
             {
@@ -286,7 +294,6 @@ namespace SocketBackendFramework.Relay.Sample.Tests
             Dictionary<uint, kcpControlInfo> kcpControls1 = new();
             Dictionary<uint, kcpControlInfo> kcpControls2 = new();
 
-            int pathCount = 2;
             for (int i = 0; i < pathCount; i++)
             {
                 (uint conversationId1, KcpControl kcpControl1) = kcpMuxControl1.AddKcpControl();
@@ -424,8 +431,6 @@ namespace SocketBackendFramework.Relay.Sample.Tests
             // activate stopwatch
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            int numTx = 1;
-
             // kcpControl1 sends application bytes
             foreach ((uint conversationIdKey, kcpControlInfo info) in kcpControls1)
             {
@@ -477,14 +482,14 @@ namespace SocketBackendFramework.Relay.Sample.Tests
                 });
             }
 
-            // Task timeout = Task.Delay(TimeSpan.FromSeconds(2));
-            Task timeout = Task.Delay(-1);
+            Task timeoutTask = Task.Delay(timeout);
+            // Task timeoutTask = Task.Delay(-1);
 
             List<Task> testTasks = new();
             testTasks.AddRange(kcpControls1.Select(keyValuePair => keyValuePair.Value.ReceiveTask.Task));
             testTasks.AddRange(kcpControls2.Select(keyValuePair => keyValuePair.Value.ReceiveTask.Task));
             Task testTask = Task.WhenAll(testTasks);
-            await Task.WhenAny(testTask, timeout);
+            await Task.WhenAny(testTask, timeoutTask);
 
             if (!testTask.IsCompleted)
             {

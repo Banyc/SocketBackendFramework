@@ -62,10 +62,11 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         public (uint, KcpControl) AddKcpControl()
         {
             KcpConfig config = (KcpConfig)this.config.Clone();
-            KcpControl kcpControl = new(config);
+            KcpControl kcpControl;
             lock (this.kcpControls)
             {
                 config.ConversationId = this.baseConversationId + (uint)this.kcpControls.Count;
+                kcpControl = new(config);
 
                 kcpControl.TryingOutput += (sender, e) =>
                 {

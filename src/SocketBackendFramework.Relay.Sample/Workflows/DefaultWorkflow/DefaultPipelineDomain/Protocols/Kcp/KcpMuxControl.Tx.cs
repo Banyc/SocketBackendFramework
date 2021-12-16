@@ -7,7 +7,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         private readonly object txLock = new();
 
         public uint Mtu { get; set; } = 1400;  // maximum transmission unit
-        private uint roundRobinIndex = 0; 
+        private readonly Random random = new();
 
         // public void Send(uint conversationId, Span<byte> data)
         // {
@@ -31,17 +31,9 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                     int maxRound = this.kcpControls.Count;
                     for (int i = 0; i < maxRound && numBytesAppended < buffer.Length; i++)
                     {
-                        numBytesAppended += this.kcpControls[this.baseConversationId + this.roundRobinIndex].Output(buffer[numBytesAppended..]);
-                        this.roundRobinIndex = (this.roundRobinIndex + 1) % (uint)this.kcpControls.Count;
+                        int offset = this.random.Next(this.kcpControls.Count);
+                        numBytesAppended += this.kcpControls[this.baseConversationId + (uint)offset].Output(buffer[numBytesAppended..]);
                     }
-
-                    if (this.kcpControls.Count == 0)
-                    {
-                        // this is disposed
-                        // do nothing
-                        return numBytesAppended;
-                    }
-                    this.roundRobinIndex = (this.roundRobinIndex + 1) % (uint)this.kcpControls.Count;
                 }
 
                 return numBytesAppended;
