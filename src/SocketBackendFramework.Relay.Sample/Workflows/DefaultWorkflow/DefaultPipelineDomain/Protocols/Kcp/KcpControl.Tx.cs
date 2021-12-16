@@ -57,6 +57,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 {
                     shouldTryOutputAll = true;
                 }
+                this.StartOutputTimer();
             }
             if (shouldTryOutputAll)
             {
@@ -84,6 +85,7 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                         if (numBytesAppended + KcpSegment.DataOffset > buffer.Length)
                         {
                             // not enough space in TX buffer to write the next segment
+                            this.StartOutputTimer();
                             return numBytesAppended;
                         }
 
@@ -184,6 +186,27 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
 
                         segmentNode = segmentNode.Next;
                     }
+                }
+
+                if (numBytesAppended == 0)
+                {
+                    lock (this.sendingQueue)
+                    {
+                        if (this.sendingQueue.Count == 0)
+                        {
+                            // conserve threads
+                            this.isStoppingOutputTimer = true;
+                        }
+                        else
+                        {
+                            // start output timer
+                            this.StartOutputTimer();
+                        }
+                    }
+                }
+                else
+                {
+                    this.StartOutputTimer();
                 }
 
                 return numBytesAppended;

@@ -29,8 +29,8 @@ namespace SocketBackendFramework.Relay.Sample.Tests
         {
             // hyperparameters
             int pathCount = 10;
-            int numTx = 300;
-            TimeSpan timeout = TimeSpan.FromSeconds(40);
+            int numTx = 30;
+            TimeSpan timeout = TimeSpan.FromSeconds(60);
 
             Random random = new Random();
             KcpConfig config = new()

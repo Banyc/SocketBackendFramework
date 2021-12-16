@@ -30,7 +30,8 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
         // acked but out-of-order segments
         private readonly SortedDictionary<uint, KcpSegment> outOfOrderQueue = new();  // rcv_buf
 
-        private Timer? transmissionTimer;
+        private Timer? outputTimer;
+        private bool isStoppingOutputTimer = false;
 
         public event EventHandler? TryingOutput;
         public event EventHandler<int>? ReceivedCompleteSegment;
@@ -50,32 +51,39 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 this.RetransmissionTimeout = TimeSpan.FromSeconds(3);
             }
 
-            if (config.OutputDuration != null)
+            if (config.OutputDuration == null)
             {
-                this.transmissionTimer = new Timer(config.OutputDuration.Value.TotalMilliseconds);
+                this.outputTimer = null;
             }
             else
             {
-                this.transmissionTimer = new Timer(10);
-            }
-            this.transmissionTimer.AutoReset = false;
-            this.transmissionTimer.Elapsed += async (sender, e) =>
-            {
-                await this.TryOutputAsync(shouldStartNewTask: false);
-                // the timer could have already been disposed before the lock was acquired
-                this.transmissionTimer?.Start();
-            };
+                this.outputTimer = new Timer(config.OutputDuration.Value.TotalMilliseconds)
+                {
+                    AutoReset = false
+                };
+                this.outputTimer.Elapsed += async (sender, e) =>
+                {
+                    await this.TryOutputAsync(shouldStartNewTask: false);
 
-            this.transmissionTimer?.Start();
+                    if (!this.isStoppingOutputTimer)
+                    {
+                        // the timer could have already been disposed before the lock was acquired
+                        this.outputTimer?.Start();
+                    }
+                    // else conserve timer threads
+                };
+
+                this.outputTimer?.Start();
+            }
         }
 
         public void Dispose()
         {
             lock (this)
             {
-                this.transmissionTimer?.Stop();
-                this.transmissionTimer?.Dispose();
-                this.transmissionTimer = null;
+                this.outputTimer?.Stop();
+                this.outputTimer?.Dispose();
+                this.outputTimer = null;
             }
             GC.SuppressFinalize(this);
         }
@@ -112,6 +120,12 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                 this.TryingOutput?.Invoke(this, EventArgs.Empty);
             }
             this.isTryingOutput = false;
+        }
+
+        private void StartOutputTimer()
+        {
+            this.isStoppingOutputTimer = false;
+            this.outputTimer?.Start();
         }
     }
 }

@@ -78,6 +78,8 @@ namespace SocketBackendFramework.Relay.Sample.Workflows.DefaultWorkflow.DefaultP
                         {
                             // application data
 
+                            this.StartOutputTimer();
+
                             // discard invalid segments
                             if ((int)segment.SequenceNumber - (int)this.receivedQueue.SmallestSequenceNumberAllowed > this.receiveWindowSize)
                             {
